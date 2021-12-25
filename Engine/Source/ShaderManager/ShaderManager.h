@@ -14,13 +14,13 @@ public:
 	// shader ID
 	unsigned int ID;
 
-	// 构造shader
+	// 鏋勯�爏hader
 	ShaderManager(const char* vertexPath,const char* fragmentPath);
 
-	// 激活shader
+	// 婵�娲籹hader
 	void use();
 
-	// uniform工具函数1
+	// uniform宸ュ叿鍑芥暟
 	void setBool(const std::string& name, bool value) const;
 	void setInt(const std::string& name, int value) const;
 	void setFloat(const std::string& name, float value) const;
