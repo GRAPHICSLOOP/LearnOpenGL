@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+#include "ShaderManager/ShaderManager.h"
 
 GLFWwindow* initWindow(int width, int height);
 
@@ -45,7 +46,8 @@ int main()
 		1, 2, 3  // 第二个三角形
 	};
 
-	unsigned int shaderProgram = createShader();
+	ShaderManager Shader("./Engine/Shader/HelloWorld/VertexShader.glsl", "./Engine/Shader/HelloWorld/GeometryShader.glsl");
+	unsigned int shaderProgram = Shader.ID;
 
 	unsigned int VBO, VAO , EBO;
 	glGenVertexArrays(1, &VAO);
