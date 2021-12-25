@@ -35,15 +35,15 @@ int main()
 
 
 	float vertices[] = {
-	0.5f, 0.5f, 0.0f,   // ÓÒÉÏ½Ç
-	0.5f, -0.5f, 0.0f,  // ÓÒÏÂ½Ç
-	-0.5f, -0.5f, 0.0f, // ×óÏÂ½Ç
-	-0.5f, 0.5f, 0.0f   // ×óÉÏ½Ç
+	0.5f, 0.5f, 0.0f,   // å³ä¸Šè§’
+	0.5f, -0.5f, 0.0f,  // å³ä¸‹è§’
+	-0.5f, -0.5f, 0.0f, // å·¦ä¸‹è§’
+	-0.5f, 0.5f, 0.0f   // å·¦ä¸Šè§’
 	};
 
-	unsigned int indices[] = { // ×¢ÒâË÷Òı´Ó0¿ªÊ¼! 
-		0, 1, 3, // µÚÒ»¸öÈı½ÇĞÎ
-		1, 2, 3  // µÚ¶ş¸öÈı½ÇĞÎ
+	unsigned int indices[] = { // æ³¨æ„ç´¢å¼•ä»0å¼€å§‹! 
+		0, 1, 3, // ç¬¬ä¸€ä¸ªä¸‰è§’å½¢
+		1, 2, 3  // ç¬¬äºŒä¸ªä¸‰è§’å½¢
 	};
 
 	ShaderManager Shader("./Engine/Shader/HelloWorld/VertexShader.glsl", "./Engine/Shader/HelloWorld/GeometryShader.glsl");
@@ -61,17 +61,17 @@ int main()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);// µÚ¶ş¸ö²ÎÊıÊÇÖµvecÖĞÓĞ¶àÉÙ¸öÔªËØ£¬¶øvec3ÊÇÈı¸ö ÕâÀïÆäÊµÔÙ¸æËßgpuÈçºÎ½âÊÍcpu´«¹ıÈ¥µÄÊı¾İ
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);// ç¬¬äºŒä¸ªå‚æ•°æ˜¯å€¼vecä¸­æœ‰å¤šå°‘ä¸ªå…ƒç´ ï¼Œè€Œvec3æ˜¯ä¸‰ä¸ª è¿™é‡Œå…¶å®å†å‘Šè¯‰gpuå¦‚ä½•è§£é‡Šcpuä¼ è¿‡å»çš„æ•°æ®
 	glEnableVertexAttribArray(0);
 
 	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); ÕâÀï²»¿ÉÒÔ½â°óEBO ÒòÎª VAOÖ»»á¼ÇÂ¼GL_ELEMENT_ARRAY_BUFFER°ó¶¨¡£
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); è¿™é‡Œä¸å¯ä»¥è§£ç»‘EBO å› ä¸º VAOåªä¼šè®°å½•GL_ELEMENT_ARRAY_BUFFERç»‘å®šã€‚
 	glBindVertexArray(0);
-	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); Òò´ËÈç¹ûÔÚÕâÀï½â°óÊÇÅ·¿ËµÄ£¬ÒòÎªVAOÒÑ¾­½â°óÁË ²»»Ø¼ÇÂ¼Õâ¸öbufferµÄ½â°ó
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); å› æ­¤å¦‚æœåœ¨è¿™é‡Œè§£ç»‘æ˜¯æ¬§å…‹çš„ï¼Œå› ä¸ºVAOå·²ç»è§£ç»‘äº† ä¸å›è®°å½•è¿™ä¸ªbufferçš„è§£ç»‘
 
 	
-	// °ó¶¨µ÷Õû´°¿Úº¯Êı
+	// ç»‘å®šè°ƒæ•´çª—å£å‡½æ•°
 	glfwSetFramebufferSizeCallback(window,framebuffer_size_callback);
 
 	while (!glfwWindowShouldClose(window))
@@ -86,7 +86,7 @@ int main()
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-		// ¼ì²é¸÷ÖÖ»Øµ÷ÊÂ¼ş£¬Êó±ê¼üÅÌÊäÈëµÈ
+		// æ£€æŸ¥å„ç§å›è°ƒäº‹ä»¶ï¼Œé¼ æ ‡é”®ç›˜è¾“å…¥ç­‰
 		glfwPollEvents();
 
 		// swapbuffer
