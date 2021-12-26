@@ -13,20 +13,6 @@ void proccessInput(GLFWwindow* window);
 
 unsigned int createTexture(const char* texturePath);
 
-const char* vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"}\0";
-
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-"}\0";
-
 
 int main()
 {
@@ -47,9 +33,6 @@ int main()
 		0, 1, 3, // 第一个三角形
 		1, 2, 3  // 第二个三角形
 	};
-
-	ShaderManager Shader("./Engine/Shader/HelloWorld/VertexShader.glsl", "./Engine/Shader/HelloWorld/GeometryShader.glsl");
-	unsigned int shaderProgram = Shader.ID;
 
 	unsigned int VBO, VAO , EBO;
 	glGenVertexArrays(1, &VAO);
@@ -76,6 +59,8 @@ int main()
 	glBindVertexArray(0);
 	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); 因此如果在这里解绑是欧克的，因为VAO已经解绑了 不回记录这个buffer的解绑
 
+	// shader
+	ShaderManager Shader("./Engine/Shader/HelloWorld/VertexShader.glsl", "./Engine/Shader/HelloWorld/GeometryShader.glsl");
 
 	// 加载贴图
 	unsigned int texture1 = createTexture("./Materials/box.jpg");
@@ -84,7 +69,9 @@ int main()
 	// 绑定调整窗口函数
 	glfwSetFramebufferSizeCallback(window,framebuffer_size_callback);
 
-	glUseProgram(shaderProgram);
+
+	// 设置渲染所需要的贴图和顶点数据
+	glUseProgram(Shader.ID);
 	glBindVertexArray(VAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture1);
@@ -114,7 +101,7 @@ int main()
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
-	glDeleteProgram(shaderProgram);
+	glDeleteProgram(Shader.ID);
 
 	glfwTerminate();
 	return 0;
