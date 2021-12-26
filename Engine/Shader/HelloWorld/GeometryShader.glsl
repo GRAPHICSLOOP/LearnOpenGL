@@ -1,5 +1,4 @@
 #version 330 core
-in vec4 vertexCol;
 in vec2 texrtureCoord;
 out vec4 FragColor;
 
