@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "ShaderManager/ShaderManager.h"
+#include "stb_image/stb_image.h"
 
 GLFWwindow* initWindow(int width, int height);
 
@@ -10,7 +11,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 void proccessInput(GLFWwindow* window);
 
-unsigned int createShader();
+unsigned int createTexture(const char* texturePath);
 
 const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
@@ -35,13 +36,16 @@ int main()
 
 
 	float vertices[] = {
-	0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   // 右上角
-	0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, // 右下角
-	-0.5f, -0.0f, 0.0f, 0.0f, 0.0f, 1.0f, // 左下角
+		//     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
+			 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // 右上
+			 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // 右下
+			-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
+			-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // 左上
 	};
 
-	unsigned int indices[] = { // 注意索引从0开始! 
-		0, 1, 2, // 第一个三角形
+	unsigned int indices[] = {
+		0, 1, 3, // 第一个三角形
+		1, 2, 3  // 第二个三角形
 	};
 
 	ShaderManager Shader("./Engine/Shader/HelloWorld/VertexShader.glsl", "./Engine/Shader/HelloWorld/GeometryShader.glsl");
@@ -59,10 +63,12 @@ int main()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);// 第二个参数是值vec中有多少个元素，而vec3是三个 这里其实再告诉gpu如何解释cpu传过去的数据
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);// 第二个参数是值vec中有多少个元素，而vec3是三个 这里其实再告诉gpu如何解释cpu传过去的数据
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -70,6 +76,9 @@ int main()
 	glBindVertexArray(0);
 	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); 因此如果在这里解绑是欧克的，因为VAO已经解绑了 不回记录这个buffer的解绑
 
+
+	// 加载贴图
+	unsigned int texture = createTexture("./Materials/box.jpg");
 	
 	// 绑定调整窗口函数
 	glfwSetFramebufferSizeCallback(window,framebuffer_size_callback);
@@ -78,13 +87,15 @@ int main()
 	{
 		proccessInput(window);
 
-		//DrawCall();
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glUseProgram(shaderProgram);
+
+		glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
+
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// 检查各种回调事件，鼠标键盘输入等
 		glfwPollEvents();
@@ -142,4 +153,38 @@ void proccessInput(GLFWwindow* window)
 	{
 		glfwSetWindowShouldClose(window, true);
 	}
+}
+
+unsigned int createTexture(const char* texturePath)
+{
+	// 1.从文件中加载贴图数据
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load(texturePath, &width, &height, &nrChannels, 0);
+	if (data == NULL)
+	{
+		std::cout << "Failed to load texture" << std::endl;
+		stbi_image_free(data);
+		return 0;
+	}
+
+	// 2.创建纹理
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	// 设置纹理环绕、过滤方式
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// 加载纹理
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	
+	// 生成minimap
+	glGenerateMipmap(texture);
+
+	stbi_image_free(data);
+
+	return texture;
 }
