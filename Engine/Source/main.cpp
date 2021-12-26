@@ -1,9 +1,14 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "ShaderManager/ShaderManager.h"
 #include "stb_image/stb_image.h"
+
+#define screenWidth 800.f
+#define screenHeight 600.f
+
 
 GLFWwindow* initWindow(int width, int height);
 
@@ -16,7 +21,7 @@ unsigned int createTexture(const char* texturePath);
 
 int main()
 {
-	GLFWwindow* window = initWindow(800, 600);
+	GLFWwindow* window = initWindow((int)screenWidth, (int)screenHeight);
 	if (window == NULL)
 		return -1;
 
@@ -69,8 +74,16 @@ int main()
 	// 绑定调整窗口函数
 	glfwSetFramebufferSizeCallback(window,framebuffer_size_callback);
 
+	// 设置矩阵
+	glm::mat4 modelMatrix = glm::mat4(1.0f);
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(-55.f), glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 viewMatrix = glm::mat4(1.0f);
+	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.f, 0.f, -2.f));
+	glm::mat4 projectionMatrix = glm::mat4(1.0f);
+	projectionMatrix = glm::perspective(glm::radians(45.f), screenWidth / screenHeight, 0.1f, 100.f);
 
-	// 设置渲染所需要的贴图和顶点数据
+
+	// 设置渲染所需要的贴图、顶点数据、矩阵
 	glUseProgram(Shader.ID);
 	glBindVertexArray(VAO);
 	glActiveTexture(GL_TEXTURE0);
@@ -79,6 +92,9 @@ int main()
 	glBindTexture(GL_TEXTURE_2D, texture2);
 	Shader.setInt("texture1", 0);
 	Shader.setInt("texture2", 1);
+	Shader.setMatrix("modelMatrix", modelMatrix);
+	Shader.setMatrix("viewMatrix", viewMatrix);
+	Shader.setMatrix("projectionMatrix", projectionMatrix);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -86,7 +102,6 @@ int main()
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-
 
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

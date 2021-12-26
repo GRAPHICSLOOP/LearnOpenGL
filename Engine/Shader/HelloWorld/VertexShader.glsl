@@ -5,9 +5,14 @@ layout (location = 2) in vec2 aTextureCoord;
 
 out vec4 vertexCol;
 out vec2 texrtureCoord;
+
+uniform mat4 modelMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
+
 void main()
 {
-	gl_Position = vec4(aPos.x,aPos.y,aPos.z,1);
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(aPos,1.0f);
 	vertexCol = vec4(aCol,1);
 	texrtureCoord = aTextureCoord;
 }
