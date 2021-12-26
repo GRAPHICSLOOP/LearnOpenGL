@@ -78,10 +78,20 @@ int main()
 
 
 	// 加载贴图
-	unsigned int texture = createTexture("./Materials/box.jpg");
+	unsigned int texture1 = createTexture("./Materials/box.jpg");
+	unsigned int texture2 = createTexture("./Materials/awesomeface.jpg");
 	
 	// 绑定调整窗口函数
 	glfwSetFramebufferSizeCallback(window,framebuffer_size_callback);
+
+	glUseProgram(shaderProgram);
+	glBindVertexArray(VAO);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+	Shader.setInt("texture1", 0);
+	Shader.setInt("texture2", 1);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -89,10 +99,7 @@ int main()
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		glUseProgram(shaderProgram);
 
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glBindVertexArray(VAO);
 
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -157,6 +164,9 @@ void proccessInput(GLFWwindow* window)
 
 unsigned int createTexture(const char* texturePath)
 {
+	// 0.翻转图片
+	stbi_set_flip_vertically_on_load(true);
+	
 	// 1.从文件中加载贴图数据
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load(texturePath, &width, &height, &nrChannels, 0);
