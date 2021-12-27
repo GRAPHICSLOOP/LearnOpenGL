@@ -14,9 +14,14 @@
 // 摄像机系统
 CameraManager cameraManager;
 
+float deltaTime = 0.0f; // 当前帧与上一帧的时间差
+float lastFrame = 0.0f; // 上一帧的时间
+
 GLFWwindow* initWindow(int width, int height);
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
+void calculateTime();
 
 void proccessInput(GLFWwindow* window);
 
@@ -191,11 +196,41 @@ void framebuffer_size_callback(GLFWwindow* window,int width,int height)
 	glViewport(0, 0, width, height);
 }
 
+void calculateTime()
+{
+	float currentFrame = glfwGetTime();
+	deltaTime = currentFrame - lastFrame;
+	lastFrame = currentFrame;
+
+}
+
 void proccessInput(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE))
 	{
 		glfwSetWindowShouldClose(window, true);
+	}
+
+
+	float cameraSpeed = 0.05f;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		cameraManager.getCameraPositionRef() += cameraSpeed * cameraManager.getCameraFrontDir();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		cameraManager.getCameraPositionRef() -= cameraSpeed * cameraManager.getCameraFrontDir();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		cameraManager.getCameraPositionRef() += cameraSpeed * cameraManager.getCaneraRightDir();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		cameraManager.getCameraPositionRef() -= cameraSpeed * cameraManager.getCaneraRightDir();
 	}
 }
 
@@ -244,7 +279,6 @@ void setModelTransform(ShaderManager& shader)
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
 	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.f, 0.f, -10.f));// 将摄像机放置中心，其实也就是将物体往-z移动
 	//viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.f), glm::vec3(0.f), glm::vec3(0.0f, 1.0f, 0.0f));// +z是从平面指向你的
-	cameraManager.setCameraPosition(glm::vec3(0.f, 0.f, 10.f));
 	viewMatrix = cameraManager.getLookAtMatrix();
 
 	glm::mat4 projectionMatrix = glm::mat4(1.0f);
