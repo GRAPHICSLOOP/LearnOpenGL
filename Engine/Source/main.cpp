@@ -3,12 +3,16 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "ShaderManager/ShaderManager.h"
 #include "stb_image/stb_image.h"
+
+#include "ShaderManager/ShaderManager.h"
+#include "CameraManager/CameraManager.h"
 
 #define screenWidth 800.f
 #define screenHeight 600.f
 
+// 摄像机系统
+CameraManager cameraManager;
 
 GLFWwindow* initWindow(int width, int height);
 
@@ -238,7 +242,11 @@ void setModelTransform(ShaderManager& shader)
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 	modelMatrix = glm::rotate(modelMatrix, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
-	viewMatrix = glm::translate(viewMatrix, glm::vec3(0.f, 0.f, -2.f));
+	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.f, 0.f, -10.f));// 将摄像机放置中心，其实也就是将物体往-z移动
+	//viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.f), glm::vec3(0.f), glm::vec3(0.0f, 1.0f, 0.0f));// +z是从平面指向你的
+	cameraManager.setCameraPosition(glm::vec3(0.f, 0.f, 10.f));
+	viewMatrix = cameraManager.getLookAtMatrix();
+
 	glm::mat4 projectionMatrix = glm::mat4(1.0f);
 	projectionMatrix = glm::perspective(glm::radians(45.f), screenWidth / screenHeight, 0.1f, 100.f);
 
