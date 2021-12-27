@@ -135,6 +135,10 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
+		// 每帧开始时计算时间
+		calculateTime();
+
+		// 处理输入
 		proccessInput(window);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -201,7 +205,6 @@ void calculateTime()
 	float currentFrame = glfwGetTime();
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
-
 }
 
 void proccessInput(GLFWwindow* window)
@@ -212,7 +215,7 @@ void proccessInput(GLFWwindow* window)
 	}
 
 
-	float cameraSpeed = 0.05f;
+	float cameraSpeed = 1.5f * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		cameraManager.getCameraPositionRef() += cameraSpeed * cameraManager.getCameraFrontDir();
