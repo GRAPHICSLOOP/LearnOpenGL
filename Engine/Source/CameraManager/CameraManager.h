@@ -1,4 +1,5 @@
 #pragma once
+// 相机使用左手坐标系
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
