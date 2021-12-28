@@ -16,10 +16,14 @@ CameraManager cameraManager;
 
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
+float lastCursorX = 0.0f; // 上一帧的鼠标X轴位置
+float lastCursorY = 0.0f; // 上一帧的鼠标Y轴位置
 
 GLFWwindow* initWindow(int width, int height);
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
+void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 
 void calculateTime();
 
@@ -115,8 +119,6 @@ int main()
 	unsigned int texture1 = createTexture("./Materials/box.jpg");
 	unsigned int texture2 = createTexture("./Materials/awesomeface.jpg");
 	
-	// 绑定调整窗口函数
-	glfwSetFramebufferSizeCallback(window,framebuffer_size_callback);
 
 
 
@@ -191,6 +193,16 @@ GLFWwindow* initWindow(int width, int height)
 		return NULL;
 	}
 
+	// 绑定调整窗口函数
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	// 绑定鼠标移动
+	glfwSetCursorPosCallback(window, cursorPosCallback);
+
+	// 设置是否显示鼠标
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+
 	return window;
 }
 
@@ -200,9 +212,24 @@ void framebuffer_size_callback(GLFWwindow* window,int width,int height)
 	glViewport(0, 0, width, height);
 }
 
+void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+{
+	float deltaCursorX = (float)xpos - lastCursorX;
+	float deltaCursorY = lastCursorY - (float)ypos; 
+	lastCursorX = (float)xpos;
+	lastCursorY = (float)ypos;
+
+	float sensitivity = 0.05f; // 旋转灵敏度
+	deltaCursorY *= sensitivity;
+	deltaCursorX *= sensitivity;
+
+	// 设置旋转
+	cameraManager.setCameraRotation(cameraManager.getCameraRotation() + glm::vec3(deltaCursorY, deltaCursorX, 0.0f));
+}
+
 void calculateTime()
 {
-	float currentFrame = glfwGetTime();
+	float currentFrame = (float)glfwGetTime();
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 }
