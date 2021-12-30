@@ -9,6 +9,16 @@ CameraManager::CameraManager()
 	dirty = true;
 }
 
+CameraManager::CameraManager(glm::vec3 position,glm::vec3 rotation)
+{
+	cameraPos = position;
+	cameraRotation = rotation;
+	lookAtMat = glm::mat4(1.0f);
+	cameraFront = glm::vec3(0.f, 0.f, -1.f);
+	cameraUp = glm::vec3(0.f, 1.f, 0.f);
+	dirty = true;
+}
+
 void CameraManager::setCameraPosition(glm::vec3 pos)
 {
 	cameraPos = pos;

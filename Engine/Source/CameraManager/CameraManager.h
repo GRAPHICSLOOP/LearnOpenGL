@@ -1,5 +1,6 @@
 #pragma once
 // 相机使用左手坐标系
+// +z是从屏幕指向你的
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -8,6 +9,7 @@ class CameraManager
 {
 public:
 	CameraManager();
+	CameraManager(glm::vec3 pos, glm::vec3 rotation);
 
 protected:
 	glm::vec3 cameraPos;
