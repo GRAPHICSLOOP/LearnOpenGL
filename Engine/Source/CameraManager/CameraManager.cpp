@@ -70,9 +70,14 @@ glm::vec3 CameraManager::getCameraFrontDir()
 	return cameraFront;
 }
 
-glm::vec3 CameraManager::getCaneraRightDir()
+glm::vec3 CameraManager::getCameraRightDir()
 {
 	return glm::normalize(glm::cross(cameraFront,cameraUp));
+}
+
+glm::vec3 CameraManager::getCameraUpDir()
+{
+	return cameraUp;
 }
 
 glm::vec3 CameraManager::getCameraRotation()

@@ -37,7 +37,9 @@ public:
 	// 获取相机向前的方向
 	glm::vec3 getCameraFrontDir();
 	// 获取相机向右的方向
-	glm::vec3 getCaneraRightDir();
+	glm::vec3 getCameraRightDir();
+	// 获取相机向上的方向
+	glm::vec3 getCameraUpDir();
 	// 获取相机旋转
 	glm::vec3 getCameraRotation();
 

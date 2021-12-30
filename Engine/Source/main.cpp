@@ -19,18 +19,25 @@ float lastFrame = 0.0f; // 上一帧的时间
 float lastCursorX = 0.0f; // 上一帧的鼠标X轴位置
 float lastCursorY = 0.0f; // 上一帧的鼠标Y轴位置
 
+// 初始化窗口
 GLFWwindow* initWindow(int width, int height);
 
+// 窗口尺寸改变回调函数
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
+// 鼠标移动回调函数
 void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 
+// 计算事件插值
 void calculateTime();
 
+// 处理输入
 void proccessInput(GLFWwindow* window);
 
+// 创建贴图
 unsigned int createTexture(const char* texturePath);
 
+// 设置模型变化
 void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale);
 
 int main()
@@ -164,7 +171,7 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-		//// 在渲染灯光
+		// 在渲染灯光
 		glUseProgram(shaderLight.ID);
 		glBindVertexArray(shaderLight.ID);
 
@@ -277,12 +284,22 @@ void proccessInput(GLFWwindow* window)
 
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		cameraManager.getCameraPositionRef() += cameraSpeed * cameraManager.getCaneraRightDir();
+		cameraManager.getCameraPositionRef() += cameraSpeed * cameraManager.getCameraRightDir();
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		cameraManager.getCameraPositionRef() -= cameraSpeed * cameraManager.getCaneraRightDir();
+		cameraManager.getCameraPositionRef() -= cameraSpeed * cameraManager.getCameraRightDir();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+	{
+		cameraManager.getCameraPositionRef() += cameraSpeed * cameraManager.getCameraUpDir();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+	{
+		cameraManager.getCameraPositionRef() -= cameraSpeed * cameraManager.getCameraUpDir();
 	}
 }
 
