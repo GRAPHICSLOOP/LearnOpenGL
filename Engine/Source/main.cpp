@@ -37,7 +37,7 @@ void proccessInput(GLFWwindow* window);
 unsigned int createTexture(const char* texturePath);
  
 // 设置模型变化
-void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale);
+void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale, float rotation);
 
 int main()
 {
@@ -94,6 +94,19 @@ int main()
 		1, 2, 3  // 第二个三角形
 	};
 
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	// VAO主要目的就是可以使用预设，VBO设置好之后就可以用VAO使用VBO的预设，我们在VBO里可以设置如何绑定vertex着色器的变量例如是需要绑定两个变量还是一个变量
 	// 第一步先绑定渲染盒子VAO
 	unsigned int VBO, CubeVAO , EBO;
@@ -133,12 +146,13 @@ int main()
 	glBindVertexArray(0);
 
 	// shader
-	ShaderManager shaderCube("./Engine/Shader/BasicLighting/VertexShader.glsl", "./Engine/Shader/BasicLighting/FragmentShader.glsl");
-	ShaderManager shaderLight("./Engine/Shader/BasicLighting/VertexLightShader.glsl", "./Engine/Shader/BasicLighting/FragmentLightShader.glsl");
+	ShaderManager shaderCube("./Engine/Shader/MultiLight/VertexShader.glsl", "./Engine/Shader/MultiLight/FragmentShader.glsl");
+	ShaderManager shaderLight("./Engine/Shader/MultiLight/VertexLightShader.glsl", "./Engine/Shader/MultiLight/FragmentLightShader.glsl");
 
 	// 加载贴图
-	unsigned int texture1 = createTexture("./Materials/box.jpg");
+	unsigned int texture1 = createTexture("./Materials/container2.png");
 	unsigned int texture2 = createTexture("./Materials/awesomeface.jpg");
+	unsigned int texture3 = createTexture("./Materials/container2_specular.png");
 	
 	// 设置openGL状态
 	glEnable(GL_DEPTH_TEST);
@@ -162,25 +176,38 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
-		shaderCube.setInt("texture1", 0);
-		shaderCube.setInt("texture2", 1);
-		shaderCube.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		shaderCube.setVec3("lightPos", glm::vec3(2.0f, 1.0f, 2.0f));
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, texture3);
+		shaderCube.setInt("texture1", 1);
 		shaderCube.setVec3("viewPos", cameraManager.getCameraPosition());
+		shaderCube.setVec3("light.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderCube.setVec3("light.lightPos", glm::vec3(2.0f, 1.0f, 2.0f));
+		shaderCube.setInt("material.diffuse", 0);
+		shaderCube.setInt("material.specular", 2);
+		shaderCube.setVec3("material.ambient", glm::vec3(0.2f));
+		shaderCube.setFloat("material.shininess", 32.0f);
 
-		// 设置物体旋转位置等
-		setModelTransform(shaderCube,glm::vec3(0.0f),glm::vec3(1.0f));
+		// 随机生成10个正方体
+		for (int i = 0; i < 10; i++)
+		{
+			float angle = 20 * (float)i;
 
-		// 开始绘制
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			// 设置物体旋转位置等
+			setModelTransform(shaderCube, cubePositions[i], glm::vec3(1.0f),angle);
+
+			// 开始绘制
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		}
+
+		
 
 		// 在渲染灯光
 		glUseProgram(shaderLight.ID);
 		glBindVertexArray(shaderLight.ID);
 
 		// 设置物体旋转位置等
-		setModelTransform(shaderLight, glm::vec3(2.0f,1.0f,2.0f), glm::vec3(0.5f));
+		setModelTransform(shaderLight, glm::vec3(2.0f,1.0f,2.0f), glm::vec3(0.5f),0.f);
 
 		// 开始绘制
 		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -333,8 +360,10 @@ unsigned int createTexture(const char* texturePath)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+	int format = nrChannels > 3 ? GL_RGBA : GL_RGB;
+
 	// 加载纹理
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 	
 	// 生成minimap
 	glGenerateMipmap(texture);
@@ -344,12 +373,13 @@ unsigned int createTexture(const char* texturePath)
 	return texture;
 }
 
-void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale)
+void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,float rotation)
 {
 	// 设置矩阵
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 	//modelMatrix = glm::rotate(modelMatrix, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 旋转
 	modelMatrix = glm::scale(modelMatrix, scale);
+	modelMatrix = glm::rotate(modelMatrix, rotation, glm::vec3(1.0f, 0.3f, 0.5f));
 	modelMatrix = glm::translate(modelMatrix, location);
 
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
