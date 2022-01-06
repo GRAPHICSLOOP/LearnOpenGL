@@ -141,6 +141,7 @@ vec3 CalcSpotLight(SpotLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 
 	// 环境光
 	vec3 ambient = material.ambient * vec3(objectColor);
 
+	// 检查当前frag缩放在圆锥内
 	if(dot(-lightDir,light.direction) < light.cutOff)
 		return ambient;
 
