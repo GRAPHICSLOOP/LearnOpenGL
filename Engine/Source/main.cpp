@@ -180,8 +180,18 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, texture3);
 		shaderCube.setInt("texture1", 1);
 		shaderCube.setVec3("viewPos", cameraManager.getCameraPosition());
-		shaderCube.setVec3("light.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		shaderCube.setVec3("light.lightPos", glm::vec3(2.0f, 1.0f, 2.0f));
+		//shaderCube.setVec3("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
+		//shaderCube.setVec3("dirLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		/*shaderCube.setVec3("pointLight.position", glm::vec3(2.0f, 1.0f, 2.0f));
+		shaderCube.setVec3("pointLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderCube.setFloat("pointLight.constant", 1.f);
+		shaderCube.setFloat("pointLight.linear", 0.09f);
+		shaderCube.setFloat("pointLight.quadratic", 0.032f);*/
+		shaderCube.setVec3("spotLight.position", glm::vec3(2.0f, 1.0f, 2.0f));
+		shaderCube.setVec3("spotLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderCube.setVec3("spotLight.direction", normalize(glm::vec3(-1.0f, 0.0f, 0.0f)));
+		shaderCube.setFloat("spotLight.cutOff", cos(glm::radians(10.f)));
+
 		shaderCube.setInt("material.diffuse", 0);
 		shaderCube.setInt("material.specular", 2);
 		shaderCube.setVec3("material.ambient", glm::vec3(0.2f));

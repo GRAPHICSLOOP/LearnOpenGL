@@ -16,23 +16,54 @@ struct Material
     float shininess;
 };
 
-struct Light
+
+struct DirLight
 {
+	vec3 direction;
+
 	vec3 lightColor;
-	vec3 lightPos;
+};
+
+struct PointLight
+{
+	vec3 position;
+	vec3 lightColor;
+
+	float constant;
+    float linear;
+    float quadratic;
+};
+
+struct SpotLight
+{
+	vec3 position;
+	vec3 direction;
+	vec3 lightColor;
+
+	float cutOff;
 };
 
 uniform Material material;
-uniform Light light;
+uniform DirLight dirLight;
+uniform PointLight pointLight;
+uniform SpotLight spotLight;
+
+
+vec3 CalcDirLight(DirLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor);
+vec3 CalcPointLight(PointLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor);
+vec3 CalcSpotLight(SpotLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor);
 
 void main()
 {
 	vec2 uv = texrtureCoord;
+	vec3 norm = normalize(normal);
+	vec3 viewDir = normalize(viewPos - fragPos);
 
 	vec4 color1 = texture(material.diffuse,uv);
 	vec4 color2 = texture(texture1,uv);
-	vec4 objectColor = mix(color1,color2,0.05f) * vec4(light.lightColor,1.f);
-
+	vec3 objectColor = vec3(mix(color1,color2,0.05f));
+	
+	/*
 	// 环境光
 	vec3 ambient = material.ambient * vec3(objectColor);
 
@@ -49,4 +80,80 @@ void main()
 	vec3 specular = spec * vec3(texture(material.specular,uv));
 
 	FragColor = vec4(light.lightColor *(diffuse + ambient + specular),1.f); 
+	*/
+
+	//vec4 dirColor = vec4(CalcDirLight(dirLight,normal,viewDir,objectColor,vec3(texture(material.specular,uv))) ,1.f);
+	//vec4 dirColor = vec4(CalcPointLight(pointLight,normal,viewDir,objectColor,vec3(texture(material.specular,uv))) ,1.f);
+	vec4 dirColor = vec4(CalcSpotLight(spotLight,normal,viewDir,objectColor,vec3(texture(material.specular,uv))) ,1.f);
+	FragColor = dirColor;
 }
+
+
+vec3 CalcDirLight(DirLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor)
+{
+	// 环境光
+	vec3 ambient = material.ambient * vec3(objectColor);
+
+	// 漫反射
+	vec3 lightDir = normalize(-light.direction);
+	float diff = max(dot(norm,lightDir),0.0f);
+	vec3 diffuse = diff * objectColor;
+
+	// 镜面光
+	vec3 reflectDir = normalize(reflect(-lightDir,normal));
+	float spec = pow(max(dot(viewDir,reflectDir),0),material.shininess);
+	vec3 specular = spec * specularColor;
+
+	vec3 result = light.lightColor *(diffuse + ambient + specular); 
+
+	return result;
+};
+
+vec3 CalcPointLight(PointLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor)
+{
+	// 环境光
+	vec3 ambient = material.ambient * vec3(objectColor);
+
+	// 漫反射
+	vec3 lightDir = normalize(light.position - fragPos);
+	float diff = max(dot(norm,lightDir),0.0f);
+	vec3 diffuse = diff * objectColor;
+
+	// 镜面光
+	vec3 reflectDir = normalize(reflect(-lightDir,normal));
+	float spec = pow(max(dot(viewDir,reflectDir),0),material.shininess);
+	vec3 specular = spec * specularColor;
+
+	// 衰减
+	float dist = length(light.position - fragPos);
+	float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
+
+	vec3 result = light.lightColor *(diffuse + ambient + specular) * attenuation; 
+
+	return result;
+};
+
+vec3 CalcSpotLight(SpotLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor)
+{
+	// frag到灯光的方向
+	vec3 lightDir = normalize(light.position - fragPos);
+
+	// 环境光
+	vec3 ambient = material.ambient * vec3(objectColor);
+
+	if(dot(-lightDir,light.direction) < light.cutOff)
+		return ambient;
+
+	// 漫反射
+	float diff = max(dot(norm,lightDir),0.0f);
+	vec3 diffuse = diff * objectColor;
+
+	// 镜面光
+	vec3 reflectDir = normalize(reflect(-lightDir,normal));
+	float spec = pow(max(dot(viewDir,reflectDir),0),material.shininess);
+	vec3 specular = spec * specularColor;
+
+	vec3 result = light.lightColor *(diffuse + ambient + specular); 
+
+	return result;
+};
