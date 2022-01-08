@@ -62,25 +62,6 @@ void main()
 	vec4 color1 = texture(material.diffuse,uv);
 	vec4 color2 = texture(texture1,uv);
 	vec3 objectColor = vec3(mix(color1,color2,0.05f));
-	
-	/*
-	// 环境光
-	vec3 ambient = material.ambient * vec3(objectColor);
-
-	// 漫反射
-	vec3 norm = normalize(normal);
-	vec3 lightDir = normalize(light.lightPos - fragPos);
-	float diff = max(dot(norm,lightDir),0.0f);
-	vec3 diffuse = diff * vec3(objectColor);
-
-	// 镜面光
-	vec3 viewDir = normalize(viewPos - fragPos);
-	vec3 reflectDir = normalize(reflect(-lightDir,normal));
-	float spec = pow(max(dot(viewDir,reflectDir),0),material.shininess);
-	vec3 specular = spec * vec3(texture(material.specular,uv));
-
-	FragColor = vec4(light.lightColor *(diffuse + ambient + specular),1.f); 
-	*/
 
 	//vec4 dirColor = vec4(CalcDirLight(dirLight,normal,viewDir,objectColor,vec3(texture(material.specular,uv))) ,1.f);
 	//vec4 dirColor = vec4(CalcPointLight(pointLight,normal,viewDir,objectColor,vec3(texture(material.specular,uv))) ,1.f);
