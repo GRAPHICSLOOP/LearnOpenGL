@@ -161,13 +161,9 @@ int main()
 	// 加载贴图
 	unsigned int texture1 = createTexture("./Materials/container2.png");
 	unsigned int texture2 = createTexture("./Materials/awesomeface.jpg");
-	unsigned int texture3 = createTexture("./Materials/container2_specular.png");
 	
 	// 设置openGL状态
 	glEnable(GL_DEPTH_TEST);
-
-
-
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -192,7 +188,6 @@ int main()
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, texture3);
 		shaderCube.setInt("texture1", 1);
 		shaderCube.setVec3("viewPos", cameraManager.getCameraPosition());
 		// shaderCube.setVec3("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
@@ -223,7 +218,7 @@ int main()
 			setModelTransform(shaderCube, cubePositions[i], glm::vec3(1.0f),angle);
 
 			// 开始绘制
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			//glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
 		// 设置物体旋转位置等
@@ -233,7 +228,7 @@ int main()
 		shaderModel.setVec3("dirLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(0.0f), glm::vec3(0.3f), 0.f);
+		setModelTransform(shaderModel, glm::vec3(0.0f), glm::vec3(0.2f), 0.f);
 		
 
 		// 渲染模型
