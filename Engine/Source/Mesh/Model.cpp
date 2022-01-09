@@ -103,8 +103,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, unsigned int typeName)
 {
 	std::vector<Texture> textures;
-
-	
+	Texture texture;
 
 	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
 	{
@@ -112,13 +111,33 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 		aiString path;
 		mat->GetTexture(type, i, &str);
 
+		bool isSkip = false;
+		for (unsigned int j = 0; j < textureRecorders.size(); j++)
+		{
+			if (textureRecorders[j].fileName == str.C_Str())
+			{
+				texture.ID = textureRecorders[j].ID;
+				texture.type = typeName;
+				textures.push_back(texture);
+				isSkip = true;
+				break;
+			}
+		}
+
+		if (isSkip)
+			continue;
+
 		path.Set(directory.c_str());
 		path.Append(str.C_Str());
-		Texture texture;
 		texture.ID = TextureFromFile(path.C_Str());
 		texture.type = typeName;
-		
 		textures.push_back(texture);
+
+		// 记录已加载的贴图
+		TextureRecorder textureRecorder;
+		textureRecorder.fileName = str.C_Str();
+		textureRecorder.ID = texture.ID;
+		textureRecorders.push_back(textureRecorder);
 	}
 
 	return textures;

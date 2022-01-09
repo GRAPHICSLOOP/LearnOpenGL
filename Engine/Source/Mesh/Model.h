@@ -5,6 +5,11 @@
 #include <assimp/postprocess.h>
 #include "../stb_image/stb_image.h"
 
+struct TextureRecorder {
+	std::string fileName;
+	unsigned int ID;
+};
+
 class Model
 {
 public:
@@ -22,6 +27,7 @@ private:
 
 	std::vector<Mesh> meshs; // 网格
 	std::string directory; // 目录
+	std::vector<TextureRecorder> textureRecorders; // 已加载的贴图
 
 	/* 函数 */
 
@@ -30,5 +36,7 @@ private:
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
 	std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, unsigned int typeName);
 	unsigned int TextureFromFile(const char* texturePath);
+
+
 };
 

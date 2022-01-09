@@ -177,8 +177,6 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-
-
 		// 先渲染盒子
 		// 设置渲染所需要的贴图、顶点数据、矩阵
 		glUseProgram(shaderCube.ID);
@@ -198,7 +196,7 @@ int main()
 		shaderCube.setFloat("pointLight.constant", 1.f);
 		shaderCube.setFloat("pointLight.linear", 0.09f);
 		shaderCube.setFloat("pointLight.quadratic", 0.032f);*/
-
+		
 		shaderCube.setVec3("spotLight.position", glm::vec3(2.0f, 1.0f, 2.0f));
 		shaderCube.setVec3("spotLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 		shaderCube.setVec3("spotLight.direction", normalize(glm::vec3(-1.0f, 0.0f, 0.0f)));
@@ -209,23 +207,20 @@ int main()
 		shaderCube.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderCube.setFloat("material.shininess", 32.0f);
 
-		// 随机生成10个正方体
-		for (int i = 0; i < 10; i++)
-		{
-			float angle = 20 * (float)i;
-
-			// 设置物体旋转位置等
-			setModelTransform(shaderCube, cubePositions[i], glm::vec3(1.0f),angle);
-
-			// 开始绘制
-			//glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-
 		// 设置物体旋转位置等
 		glUseProgram(shaderModel.ID);
 		shaderModel.setVec3("viewPos", cameraManager.getCameraPosition());
+		/*
 		shaderModel.setVec3("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
 		shaderModel.setVec3("dirLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		*/
+
+		shaderModel.setVec3("pointLight.position", glm::vec3(2.0f, 1.0f, 2.0f));
+		shaderModel.setVec3("pointLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderModel.setFloat("pointLight.constant", 1.f);
+		shaderModel.setFloat("pointLight.linear", 0.09f);
+		shaderModel.setFloat("pointLight.quadratic", 0.032f);
+
 		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderModel.setFloat("material.shininess", 32.0f);
 		setModelTransform(shaderModel, glm::vec3(0.0f), glm::vec3(0.2f), 0.f);

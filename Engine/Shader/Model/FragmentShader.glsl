@@ -60,10 +60,10 @@ void main()
 	vec4 color1 = texture(material.diffuse0,uv);
 	vec3 objectColor = vec3(color1);
 
-	//vec4 dirColor = vec4(CalcDirLight(dirLight,normal,viewDir,objectColor,vec3(texture(material.specular0,uv))) ,1.f);
-	//vec4 dirColor = vec4(CalcPointLight(pointLight,normal,viewDir,objectColor,vec3(texture(material.specular,uv))) ,1.f);
-	//vec4 dirColor = vec4(CalcSpotLight(spotLight,normal,viewDir,objectColor,vec3(texture(material.specular0,uv))) ,1.f);
-	FragColor = color1;
+	//vec4 dirColor = vec4(CalcDirLight(dirLight,norm,viewDir,objectColor,vec3(texture(material.specular0,uv))) ,1.f);
+	vec4 dirColor = vec4(CalcPointLight(pointLight,norm,viewDir,objectColor,vec3(texture(material.specular0,uv))) ,1.f);
+	//vec4 dirColor = vec4(CalcSpotLight(spotLight,norm,viewDir,objectColor,vec3(texture(material.specular0,uv))) ,1.f);
+	FragColor = dirColor;
 }
 
 
@@ -78,7 +78,7 @@ vec3 CalcDirLight(DirLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 sp
 	vec3 diffuse = diff * objectColor;
 
 	// 镜面光
-	vec3 reflectDir = normalize(reflect(-lightDir,normal));
+	vec3 reflectDir = normalize(reflect(-lightDir,norm));
 	float spec = pow(max(dot(viewDir,reflectDir),0),material.shininess);
 	vec3 specular = spec * specularColor;
 
@@ -98,7 +98,7 @@ vec3 CalcPointLight(PointLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec
 	vec3 diffuse = diff * objectColor;
 
 	// 镜面光
-	vec3 reflectDir = normalize(reflect(-lightDir,normal));
+	vec3 reflectDir = normalize(reflect(-lightDir,norm));
 	float spec = pow(max(dot(viewDir,reflectDir),0),material.shininess);
 	vec3 specular = spec * specularColor;
 
@@ -128,7 +128,7 @@ vec3 CalcSpotLight(SpotLight light,vec3 norm,vec3 viewDir,vec3 objectColor,vec3 
 	vec3 diffuse = diff * objectColor;
 
 	// 镜面光
-	vec3 reflectDir = normalize(reflect(-lightDir,normal));
+	vec3 reflectDir = normalize(reflect(-lightDir,norm));
 	float spec = pow(max(dot(viewDir,reflectDir),0),material.shininess);
 	vec3 specular = spec * specularColor;
 
