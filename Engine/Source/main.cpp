@@ -34,9 +34,6 @@ void calculateTime();
 // 处理输入
 void proccessInput(GLFWwindow* window);
 
-// 创建贴图
-unsigned int createTexture(const char* texturePath);
- 
 // 设置模型变化
 void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale, float rotation);
 
@@ -134,10 +131,6 @@ int main()
 	ShaderManager shaderLight("./Engine/Shader/MultiLight/VertexLightShader.glsl", "./Engine/Shader/MultiLight/FragmentLightShader.glsl");
 	ShaderManager shaderModel("./Engine/Shader/Model/VertexShader.glsl", "./Engine/Shader/Model/FragmentShader.glsl");
 
-	// 加载贴图
-	unsigned int texture1 = createTexture("./Materials/container2.png");
-	unsigned int texture2 = createTexture("./Materials/awesomeface.jpg");
-	
 	// 设置openGL状态
 	glEnable(GL_DEPTH_TEST);
 
@@ -303,45 +296,6 @@ void proccessInput(GLFWwindow* window)
 	{
 		cameraManager.getCameraPositionRef() -= cameraSpeed * cameraManager.getCameraUpDir();
 	}
-}
-
-unsigned int createTexture(const char* texturePath)
-{
-	// 0.翻转图片
-	stbi_set_flip_vertically_on_load(true);
-	
-	// 1.从文件中加载贴图数据
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load(texturePath, &width, &height, &nrChannels, 0);
-	if (data == NULL)
-	{
-		std::cout << "Failed to load texture" << std::endl;
-		stbi_image_free(data);
-		return 0;
-	}
-
-	// 2.创建纹理
-	unsigned int texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	// 设置纹理环绕、过滤方式
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	int format = nrChannels > 3 ? GL_RGBA : GL_RGB;
-
-	// 加载纹理
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-	
-	// 生成minimap
-	glGenerateMipmap(texture);
-
-	stbi_image_free(data);
-
-	return texture;
 }
 
 void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,float rotation)
