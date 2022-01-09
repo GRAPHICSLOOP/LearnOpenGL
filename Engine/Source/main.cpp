@@ -111,50 +111,26 @@ int main()
 
 
 	// 模型
-	Model mode("./Model/nanosuit/nanosuit.obj");
+	Model nanosuit("./Model/nanosuit/nanosuit.obj");
+	Model box("./Model/box/Crate1.obj");
 
 
-	// VAO主要目的就是可以使用预设，VBO设置好之后就可以用VAO使用VBO的预设，我们在VBO里可以设置如何绑定vertex着色器的变量例如是需要绑定两个变量还是一个变量
-	// 第一步先绑定渲染盒子VAO
-	unsigned int VBO, CubeVAO , EBO;
-	glGenVertexArrays(1, &CubeVAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-
-	glBindVertexArray(CubeVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);// 第二个参数是值vec中有多少个元素，而vec3是三个 这里其实再告诉gpu如何解释cpu传过去的数据
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	glBindVertexArray(0);
-
-	// 第二部 绑定灯光VAO
-	unsigned int lightVAO;
+	// 绑定灯光VAO
+	unsigned int lightVAO,VBO;
 
 	glGenVertexArrays(1, &lightVAO);
-	glGenBuffers(1, &EBO);
+	glGenBuffers(1, &VBO);
 
 	glBindVertexArray(lightVAO);
+
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);// 第二个参数是值vec中有多少个元素，而vec3是三个 这里其实再告诉gpu如何解释cpu传过去的数据
 	glEnableVertexAttribArray(0);
 
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBindVertexArray(0);
 
 	// shader
-	ShaderManager shaderCube("./Engine/Shader/MultiLight/VertexShader.glsl", "./Engine/Shader/MultiLight/FragmentShader.glsl");
 	ShaderManager shaderLight("./Engine/Shader/MultiLight/VertexLightShader.glsl", "./Engine/Shader/MultiLight/FragmentLightShader.glsl");
 	ShaderManager shaderModel("./Engine/Shader/Model/VertexShader.glsl", "./Engine/Shader/Model/FragmentShader.glsl");
 
@@ -176,45 +152,8 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-		// 先渲染盒子
-		// 设置渲染所需要的贴图、顶点数据、矩阵
-		glUseProgram(shaderCube.ID);
-		glBindVertexArray(CubeVAO);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture1);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture2);
-		glActiveTexture(GL_TEXTURE2);
-		shaderCube.setInt("texture1", 1);
-		shaderCube.setVec3("viewPos", cameraManager.getCameraPosition());
-		// shaderCube.setVec3("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
-		// shaderCube.setVec3("dirLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-
-		/* shaderCube.setVec3("pointLight.position", glm::vec3(2.0f, 1.0f, 2.0f));
-		shaderCube.setVec3("pointLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		shaderCube.setFloat("pointLight.constant", 1.f);
-		shaderCube.setFloat("pointLight.linear", 0.09f);
-		shaderCube.setFloat("pointLight.quadratic", 0.032f);*/
-		
-		shaderCube.setVec3("spotLight.position", glm::vec3(2.0f, 1.0f, 2.0f));
-		shaderCube.setVec3("spotLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		shaderCube.setVec3("spotLight.direction", normalize(glm::vec3(-1.0f, 0.0f, 0.0f)));
-		shaderCube.setFloat("spotLight.cutOff", cos(glm::radians(10.f)));
-
-		shaderCube.setInt("material.diffuse", 0);
-		shaderCube.setInt("material.specular", 2);
-		shaderCube.setVec3("material.ambient", glm::vec3(0.2f));
-		shaderCube.setFloat("material.shininess", 32.0f);
-
-		// 设置物体旋转位置等
 		glUseProgram(shaderModel.ID);
 		shaderModel.setVec3("viewPos", cameraManager.getCameraPosition());
-		/*
-		shaderModel.setVec3("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
-		shaderModel.setVec3("dirLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		*/
-
 		shaderModel.setVec3("pointLight.position", glm::vec3(2.0f, 1.0f, 2.0f));
 		shaderModel.setVec3("pointLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 		shaderModel.setFloat("pointLight.constant", 1.f);
@@ -223,11 +162,15 @@ int main()
 
 		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(0.0f), glm::vec3(0.2f), 0.f);
-		
-
+		setModelTransform(shaderModel, glm::vec3(0.0f), glm::vec3(0.5f), 0.f);
 		// 渲染模型
-		mode.Draw(&shaderModel);
+		box.Draw(&shaderModel);
+
+		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
+		shaderModel.setFloat("material.shininess", 32.0f);
+		setModelTransform(shaderModel, glm::vec3(0.0f), glm::vec3(0.2f), 0.f);
+		// 渲染模型
+		nanosuit.Draw(&shaderModel);
 
 
 		// 在渲染灯光
