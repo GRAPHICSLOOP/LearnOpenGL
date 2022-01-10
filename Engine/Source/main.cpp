@@ -58,7 +58,6 @@ int main()
 	};
 
 	// 模型
-	Model nanosuit("./Model/nanosuit/nanosuit.obj");
 	Model box("./Model/box/Crate1.obj");
 	CubeLight cubeLight("./Materials/box.jpg");
 
@@ -95,15 +94,20 @@ int main()
 		// 渲染盒子模型
 		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(-4.0f, 0.0f, 0.0f), glm::vec3(0.5f), 0.f);
+		setModelTransform(shaderModel, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.5f), 0.f);
 		box.Draw(&shaderModel);
 
-		// 渲染人物模型
+		// 渲染盒子模型
 		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.2f), 0.f);
-		nanosuit.Draw(&shaderModel);
+		setModelTransform(shaderModel, glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.5f), 0.f);
+		box.Draw(&shaderModel);
 
+		// 渲染盒子模型
+		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
+		shaderModel.setFloat("material.shininess", 32.0f);
+		setModelTransform(shaderModel, glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(5.0f,0.02f,5.0f), 0.f);
+		box.Draw(&shaderModel);
 
 		// 渲染灯光
 		glUseProgram(shaderLight.ID);
@@ -234,9 +238,7 @@ void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,
 	// 设置矩阵
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 	//modelMatrix = glm::rotate(modelMatrix, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 旋转
-	modelMatrix = glm::scale(modelMatrix, scale);
-	modelMatrix = glm::rotate(modelMatrix, rotation, glm::vec3(1.0f, 0.3f, 0.5f));
-	modelMatrix = glm::translate(modelMatrix, location);
+	modelMatrix = glm::translate(modelMatrix, location)*glm::rotate(modelMatrix, rotation, glm::vec3(1.0f, 0.3f, 0.5f)) *glm::scale(modelMatrix, scale);
 
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
 	viewMatrix = cameraManager.getLookAtMatrix();
