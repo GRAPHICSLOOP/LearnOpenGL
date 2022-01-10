@@ -1,5 +1,5 @@
 ﻿#pragma once
-// 相机使用左手坐标系
+// 相机使用右手坐标系
 // +z是从屏幕指向你的
 
 #include <glm/glm.hpp>

@@ -7,6 +7,7 @@
 #include "ShaderManager/ShaderManager.h"
 #include "CameraManager/CameraManager.h"
 #include "Mesh/Model.h"
+#include "Mesh/CubeLight.h"
 
 #define screenWidth 800.f
 #define screenHeight 600.f
@@ -110,22 +111,7 @@ int main()
 	// 模型
 	Model nanosuit("./Model/nanosuit/nanosuit.obj");
 	Model box("./Model/box/Crate1.obj");
-
-
-	// 绑定灯光VAO
-	unsigned int lightVAO,VBO;
-
-	glGenVertexArrays(1, &lightVAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(lightVAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);// 第二个参数是值vec中有多少个元素，而vec3是三个 这里其实再告诉gpu如何解释cpu传过去的数据
-	glEnableVertexAttribArray(0);
-
-	glBindVertexArray(0);
+	CubeLight cubeLight("./Materials/box.jpg");
 
 	// shader
 	ShaderManager shaderLight("./Engine/Shader/MultiLight/VertexLightShader.glsl", "./Engine/Shader/MultiLight/FragmentLightShader.glsl");
@@ -142,6 +128,10 @@ int main()
 		// 处理输入
 		proccessInput(window);
 
+		// 检查各种回调事件，鼠标键盘输入等
+		glfwPollEvents();
+
+
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -153,31 +143,23 @@ int main()
 		shaderModel.setFloat("pointLight.linear", 0.09f);
 		shaderModel.setFloat("pointLight.quadratic", 0.032f);
 
+		// 渲染盒子模型
 		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(0.0f), glm::vec3(0.5f), 0.f);
-		// 渲染模型
+		setModelTransform(shaderModel, glm::vec3(-4.0f, 0.0f, 0.0f), glm::vec3(0.5f), 0.f);
 		box.Draw(&shaderModel);
 
+		// 渲染人物模型
 		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(0.0f), glm::vec3(0.2f), 0.f);
-		// 渲染模型
+		setModelTransform(shaderModel, glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.2f), 0.f);
 		nanosuit.Draw(&shaderModel);
 
 
-		// 在渲染灯光
+		// 渲染灯光
 		glUseProgram(shaderLight.ID);
-		glBindVertexArray(lightVAO);
-
-		// 设置物体旋转位置等
 		setModelTransform(shaderLight, glm::vec3(2.0f,1.0f,2.0f), glm::vec3(0.5f),0.f);
-
-		// 开始绘制
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		// 检查各种回调事件，鼠标键盘输入等
-		glfwPollEvents();
+		cubeLight.Draw(&shaderLight);
 
 		// swapbuffer
 		glfwSwapBuffers(window);
