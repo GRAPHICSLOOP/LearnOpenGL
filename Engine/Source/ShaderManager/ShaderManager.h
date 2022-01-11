@@ -30,5 +30,9 @@ public:
 	void setFloat(const std::string& name, float value) const;
 	void setVec3(const std::string& name, glm::vec3 value) const;
 	void setMatrix(const std::string& name,glm::mat4& mat);
+
+private:
+	// 加载shader从文件中
+	unsigned int LoadShaderFromFile(const char* Path, GLenum type);
 };
 

@@ -2,6 +2,7 @@
 
 ShaderManager::ShaderManager(const char* vertexPath, const char* fragmentPath)
 {
+	/*
 	// 1.从文件路径中获取 vertex/fragment shader
 	std::string vertexCode;
 	std::string fragmentCode;
@@ -62,6 +63,14 @@ ShaderManager::ShaderManager(const char* vertexPath, const char* fragmentPath)
 		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
 		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
 	}
+	*/
+
+	// 编译shader
+	unsigned int vertexShader, fragmentShader;
+	int success;
+	char infoLog[512];
+	vertexShader = LoadShaderFromFile(vertexPath, GL_VERTEX_SHADER);
+	fragmentShader = LoadShaderFromFile(fragmentPath, GL_FRAGMENT_SHADER);
 
 	// shader 程序
 	ID = glCreateProgram();
@@ -110,5 +119,57 @@ void ShaderManager::setVec3(const std::string& name, glm::vec3 value) const
 void ShaderManager::setMatrix(const std::string& name, glm::mat4& mat)
 {
 	glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
+}
+
+unsigned int ShaderManager::LoadShaderFromFile(const char* Path, GLenum type)
+{
+	// 1.从文件路径中获取 vertex/fragment shader
+	std::string shaderCode;
+	std::ifstream shaderFile;
+
+	// 抛出异常
+	shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+	try
+	{
+		// 打开文件
+		shaderFile.open(Path);
+
+		std::stringstream shaderStream;
+		// 读取文件内容到数据流中
+		shaderStream << shaderFile.rdbuf();
+
+		// 转换为string
+		shaderCode = shaderStream.str();
+
+	}
+	catch (std::ifstream::failure e)
+	{
+		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+	}
+
+	const char* sCode = shaderCode.c_str();
+
+	// 2.编译shader
+	unsigned int shader;
+	int success;
+	char infoLog[512];
+
+	// shader
+	shader = glCreateShader(type);
+	glShaderSource(shader, 1, &sCode, NULL);
+	glCompileShader(shader);
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		std::string shaderName = "VERTEX";
+		if (type != GL_VERTEX_SHADER)
+			shaderName = "FRAGMENT";
+
+		glGetShaderInfoLog(shader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::"<< shaderName << "::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+
+	return shader;
 }
 
