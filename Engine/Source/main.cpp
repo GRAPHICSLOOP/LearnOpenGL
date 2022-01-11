@@ -38,6 +38,22 @@ void proccessInput(GLFWwindow* window);
 // 设置模型变化
 void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale, float rotation);
 
+// 临时
+void drawTwoBox(Model& mesh, ShaderManager& shaderModel, float Scale)
+{
+	// 渲染盒子模型
+	shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
+	shaderModel.setFloat("material.shininess", 32.0f);
+	setModelTransform(shaderModel, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(Scale), 0.f);
+	mesh.Draw(&shaderModel);
+
+	// 渲染盒子模型
+	shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
+	shaderModel.setFloat("material.shininess", 32.0f);
+	setModelTransform(shaderModel, glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(Scale), 0.f);
+	mesh.Draw(&shaderModel);
+};
+
 int main()
 {
 	GLFWwindow* window = initWindow((int)screenWidth, (int)screenHeight);
@@ -64,9 +80,9 @@ int main()
 	// shader
 	ShaderManager shaderLight("./Engine/Shader/MultiLight/VertexLightShader.glsl", "./Engine/Shader/MultiLight/FragmentLightShader.glsl");
 	ShaderManager shaderModel("./Engine/Shader/Model/VertexShader.glsl", "./Engine/Shader/Model/FragmentShader.glsl");
+	ShaderManager shaderOutLine("./Engine/Shader/Model/VertexShader.glsl", "./Engine/Shader/AdvancedOpenGL/FragOutLightShader.glsl");
 
-	// 设置openGL状态
-	glEnable(GL_DEPTH_TEST);
+
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -81,7 +97,7 @@ int main()
 
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		glUseProgram(shaderModel.ID);
 		shaderModel.setVec3("viewPos", cameraManager.getCameraPosition());
@@ -91,23 +107,41 @@ int main()
 		shaderModel.setFloat("pointLight.linear", 0.09f);
 		shaderModel.setFloat("pointLight.quadratic", 0.032f);
 
-		// 渲染盒子模型
-		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
-		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.5f), 0.f);
-		box.Draw(&shaderModel);
+		// 设置openGL状态
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-		// 渲染盒子模型
-		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
-		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.5f), 0.f);
-		box.Draw(&shaderModel);
+		glStencilMask(0x00);// 先关闭蒙版写入，防止更新地板
 
-		// 渲染盒子模型
+		// 渲染地板模型
 		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
 		shaderModel.setFloat("material.shininess", 32.0f);
 		setModelTransform(shaderModel, glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(5.0f,0.02f,5.0f), 0.f);
 		box.Draw(&shaderModel);
+
+		/* 这个时候会将蒙版绘制成两个盒子 */
+
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);// 开启蒙版写入
+		// 渲染盒子
+		drawTwoBox(box, shaderModel, 0.5f);
+
+		/* 增加描边，但是描边内部还是白色的，去掉内部的方式就是通过上面的glStencilOp
+		* glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE)：如果其中的一个测试失败了，我们什么都不做，我们仅仅保留当前储存在模板缓冲中的值。如果模板测试和深度测试都通过了，那么我们希望将储存的模板值设置为参考值，参考值能够通过glStencilFunc来设置，我们之后会设置为1
+		* 这样我们就得到了一个描边的蒙版，这样绘制的时候就只保留了描边内容，其余的都会被蒙版剔除掉
+		*/
+
+		glUseProgram(shaderOutLine.ID);
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);// 关闭蒙版写入
+		glDisable(GL_DEPTH_TEST);
+		// 渲染盒子
+		drawTwoBox(box, shaderOutLine, 0.6f);
+		glStencilMask(0xFF);// 开启蒙版写入
+		glEnable(GL_DEPTH_TEST);
+
+
 
 		// 渲染灯光
 		glUseProgram(shaderLight.ID);
