@@ -38,21 +38,8 @@ void proccessInput(GLFWwindow* window);
 // 设置模型变化
 void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale, float rotation);
 
-// 临时
-void drawTwoBox(Model& mesh, ShaderManager& shaderModel, float Scale)
-{
-	// 渲染盒子模型
-	shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
-	shaderModel.setFloat("material.shininess", 32.0f);
-	setModelTransform(shaderModel, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(Scale), 0.f);
-	mesh.Draw(&shaderModel);
-
-	// 渲染盒子模型
-	shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
-	shaderModel.setFloat("material.shininess", 32.0f);
-	setModelTransform(shaderModel, glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(Scale), 0.f);
-	mesh.Draw(&shaderModel);
-};
+// 载入贴图
+unsigned int loadTextureFromFile(const char* texturePath);
 
 int main()
 {
@@ -60,30 +47,135 @@ int main()
 	if (window == NULL)
 		return -1;
 
-	glm::vec3 cubePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-		glm::vec3(2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3(2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.7f,  3.0f, -7.5f),
-		glm::vec3(1.3f, -2.0f, -2.5f),
-		glm::vec3(1.5f,  2.0f, -2.5f),
-		glm::vec3(1.5f,  0.2f, -1.5f),
-		glm::vec3(-1.3f,  1.0f, -1.5f)
+	// 设置顶点并且配置顶点数据
+	// ------------------------------------------------------------------
+	float cubeVertices[] = {
+		// positions          // texture Coords
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+	float planeVertices[] = {
+		// positions          // texture Coords 
+		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+		 5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+	};
+	float transparentVertices[] = {
+		// positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+		0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+		0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+		1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+		0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+		1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+		1.0f,  0.5f,  0.0f,  1.0f,  0.0f
 	};
 
-	// 模型
-	Model box("./Model/box/Crate1.obj");
-	CubeLight cubeLight("./Materials/box.jpg");
+	// 草位置
+	// --------------------------------
+	std::vector<glm::vec3> vegetation
+	{
+		glm::vec3(-1.5f, 0.0f, -0.48f),
+		glm::vec3(1.5f, 0.0f, 0.51f),
+		glm::vec3(0.0f, 0.0f, 0.7f),
+		glm::vec3(-0.3f, 0.0f, -2.3f),
+		glm::vec3(0.5f, 0.0f, -0.6f)
+	};
 
-	// shader
-	ShaderManager shaderLight("./Engine/Shader/MultiLight/VertexLightShader.glsl", "./Engine/Shader/MultiLight/FragmentLightShader.glsl");
-	ShaderManager shaderModel("./Engine/Shader/Model/VertexShader.glsl", "./Engine/Shader/Model/FragmentShader.glsl");
-	ShaderManager shaderOutLine("./Engine/Shader/Model/VertexShader.glsl", "./Engine/Shader/AdvancedOpenGL/FragOutLightShader.glsl");
+	// cube VAO
+	unsigned int cubeVAO, cubeVBO;
+	glGenVertexArrays(1, &cubeVAO);
+	glGenBuffers(1, &cubeVBO);
+	glBindVertexArray(cubeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	// plane VAO
+	unsigned int planeVAO, planeVBO;
+	glGenVertexArrays(1, &planeVAO);
+	glGenBuffers(1, &planeVBO);
+	glBindVertexArray(planeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	// transparent VAO
+	unsigned int transparentVAO, transparentVBO;
+	glGenVertexArrays(1, &transparentVAO);
+	glGenBuffers(1, &transparentVBO);
+	glBindVertexArray(transparentVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glBindVertexArray(0);
 
+	// 加载贴图
+	// ------------------------------------------------------------------
+	unsigned int cubeTexure = loadTextureFromFile("./Materials/marble.jpg");
+	unsigned int planeTexure = loadTextureFromFile("./Materials/metal.png");
+	unsigned int glassTexture = loadTextureFromFile("./Materials/grass.png");
 
+	// 加载材质
+	// ------------------------------------------------------------------
+	ShaderManager shader("./Engine/Shader/Blending/VertexShader.glsl", "./Engine/Shader/Blending/FragmentShader.glsl");
 
+	// 处理材质
+	// ------------------------------------------------------------------
+	shader.use();
+	glActiveTexture(GL_TEXTURE0);
+
+	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
 	{
 		// 每帧开始时计算时间
@@ -97,56 +189,36 @@ int main()
 
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-		glUseProgram(shaderModel.ID);
-		shaderModel.setVec3("viewPos", cameraManager.getCameraPosition());
-		shaderModel.setVec3("pointLight.position", glm::vec3(2.0f, 1.0f, 2.0f));
-		shaderModel.setVec3("pointLight.lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		shaderModel.setFloat("pointLight.constant", 1.f);
-		shaderModel.setFloat("pointLight.linear", 0.09f);
-		shaderModel.setFloat("pointLight.quadratic", 0.032f);
+		// 绘制cube
+		// ------------------------------------------------------------------
+		glBindVertexArray(cubeVAO);
+		glBindTexture(GL_TEXTURE_2D, cubeTexure);
+		shader.setInt("diffuse", 0);
+		setModelTransform(shader, glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(1.0f), 0.f);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		setModelTransform(shader, glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(1.0f), 0.f);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		// 设置openGL状态
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_STENCIL_TEST);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		// 绘制plane
+		// ------------------------------------------------------------------
+		glBindVertexArray(planeVAO);
+		glBindTexture(GL_TEXTURE_2D, planeTexure);
+		shader.setInt("diffuse", 0);
+		setModelTransform(shader, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f), 0.f);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		glStencilMask(0x00);// 先关闭蒙版写入，防止更新地板
-
-		// 渲染地板模型
-		shaderModel.setVec3("material.ambient", glm::vec3(0.2f));
-		shaderModel.setFloat("material.shininess", 32.0f);
-		setModelTransform(shaderModel, glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(5.0f,0.02f,5.0f), 0.f);
-		box.Draw(&shaderModel);
-
-		/* 这个时候会将蒙版绘制成两个盒子 */
-
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF);// 开启蒙版写入
-		// 渲染盒子
-		drawTwoBox(box, shaderModel, 0.5f);
-
-		/* 增加描边，但是描边内部还是白色的，去掉内部的方式就是通过上面的glStencilOp
-		* glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE)：如果其中的一个测试失败了，我们什么都不做，我们仅仅保留当前储存在模板缓冲中的值。如果模板测试和深度测试都通过了，那么我们希望将储存的模板值设置为参考值，参考值能够通过glStencilFunc来设置，我们之后会设置为1
-		* 这样我们就得到了一个描边的蒙版，这样绘制的时候就只保留了描边内容，其余的都会被蒙版剔除掉
-		*/
-
-		glUseProgram(shaderOutLine.ID);
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00);// 关闭蒙版写入
-		glDisable(GL_DEPTH_TEST);
-		// 渲染盒子
-		drawTwoBox(box, shaderOutLine, 0.6f);
-		glStencilMask(0xFF);// 开启蒙版写入
-		glEnable(GL_DEPTH_TEST);
-
-
-
-		// 渲染灯光
-		glUseProgram(shaderLight.ID);
-		setModelTransform(shaderLight, glm::vec3(2.0f,1.0f,2.0f), glm::vec3(0.5f),0.f);
-		cubeLight.Draw(&shaderLight);
+		// 绘制草
+		// ------------------------------------------------------------------
+		for (int i = 0; i < vegetation.size(); i++)
+		{
+			glBindVertexArray(transparentVAO);
+			glBindTexture(GL_TEXTURE_2D, glassTexture);
+			shader.setInt("diffuse", 0);
+			setModelTransform(shader, vegetation[i], glm::vec3(1.0f), 0.f);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
 
 		// swapbuffer
 		glfwSwapBuffers(window);
@@ -283,4 +355,43 @@ void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,
 	shader.setMatrix("modelMatrix", modelMatrix);
 	shader.setMatrix("viewMatrix", viewMatrix);
 	shader.setMatrix("projectionMatrix", projectionMatrix);
+}
+
+unsigned int loadTextureFromFile(const char* texturePath)
+{
+	// 0.翻转图片
+	//stbi_set_flip_vertically_on_load(true);
+
+	// 1.从文件中加载贴图数据
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load(texturePath, &width, &height, &nrChannels, 0);
+	if (data == NULL)
+	{
+		std::cout << "ERROR:Failed to load texture" << std::endl;
+		stbi_image_free(data);
+		return 0;
+	}
+
+	// 2.创建纹理
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	int format = nrChannels > 3 ? GL_RGBA : GL_RGB;
+
+	// 加载纹理
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+
+	// 生成minimap
+	glGenerateMipmap(texture);
+
+	// 设置纹理环绕、过滤方式
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	stbi_image_free(data);
+
+	return texture;
 }
