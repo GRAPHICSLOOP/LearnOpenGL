@@ -164,7 +164,7 @@ int main()
 	// ------------------------------------------------------------------
 	unsigned int cubeTexure = loadTextureFromFile("./Materials/marble.jpg",GL_REPEAT);
 	unsigned int planeTexure = loadTextureFromFile("./Materials/metal.png", GL_REPEAT);
-	unsigned int glassTexture = loadTextureFromFile("./Materials/grass.png", GL_CLAMP_TO_EDGE);
+	unsigned int glassTexture = loadTextureFromFile("./Materials/blending_transparent_window.png", GL_CLAMP_TO_EDGE);
 
 	// 加载材质
 	// ------------------------------------------------------------------
@@ -176,6 +176,8 @@ int main()
 	glActiveTexture(GL_TEXTURE0);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	while (!glfwWindowShouldClose(window))
 	{
 		// 每帧开始时计算时间
@@ -209,6 +211,7 @@ int main()
 		setModelTransform(shader, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		glDepthMask(GL_FALSE);
 		// 绘制草
 		// ------------------------------------------------------------------
 		for (int i = 0; i < vegetation.size(); i++)
@@ -219,6 +222,7 @@ int main()
 			setModelTransform(shader, vegetation[i], glm::vec3(1.0f), 0.f);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
+		glDepthMask(GL_TRUE);
 
 		// swapbuffer
 		glfwSwapBuffers(window);
