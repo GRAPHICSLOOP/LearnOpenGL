@@ -9,7 +9,7 @@ void main()
 	vec4 textureColor = texture(diffuse,textureCoord);
 
 	// 当透明度不满足时丢弃该fragment
-	if(textureColor.a < 1.f)
+	if(textureColor.a < 0.1f)
 		discard;
 
 	FragColor = textureColor;

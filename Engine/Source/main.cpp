@@ -39,7 +39,7 @@ void proccessInput(GLFWwindow* window);
 void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale, float rotation);
 
 // 载入贴图
-unsigned int loadTextureFromFile(const char* texturePath);
+unsigned int loadTextureFromFile(const char* texturePath, GLenum clampType);
 
 int main()
 {
@@ -162,9 +162,9 @@ int main()
 
 	// 加载贴图
 	// ------------------------------------------------------------------
-	unsigned int cubeTexure = loadTextureFromFile("./Materials/marble.jpg");
-	unsigned int planeTexure = loadTextureFromFile("./Materials/metal.png");
-	unsigned int glassTexture = loadTextureFromFile("./Materials/grass.png");
+	unsigned int cubeTexure = loadTextureFromFile("./Materials/marble.jpg",GL_REPEAT);
+	unsigned int planeTexure = loadTextureFromFile("./Materials/metal.png", GL_REPEAT);
+	unsigned int glassTexture = loadTextureFromFile("./Materials/grass.png", GL_CLAMP_TO_EDGE);
 
 	// 加载材质
 	// ------------------------------------------------------------------
@@ -357,7 +357,7 @@ void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,
 	shader.setMatrix("projectionMatrix", projectionMatrix);
 }
 
-unsigned int loadTextureFromFile(const char* texturePath)
+unsigned int loadTextureFromFile(const char* texturePath,GLenum clampType)
 {
 	// 0.翻转图片
 	//stbi_set_flip_vertically_on_load(true);
@@ -386,8 +386,8 @@ unsigned int loadTextureFromFile(const char* texturePath)
 	glGenerateMipmap(texture);
 
 	// 设置纹理环绕、过滤方式
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clampType);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clampType);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
