@@ -2,75 +2,12 @@
 
 ShaderManager::ShaderManager(const char* vertexPath, const char* fragmentPath)
 {
-	/*
-	// 1.从文件路径中获取 vertex/fragment shader
-	std::string vertexCode;
-	std::string fragmentCode;
-	std::ifstream vShaderFile;
-	std::ifstream fShaderFile;
-
-	// 抛出异常
-	vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-	try
-	{
-		// 打开文件
-		vShaderFile.open(vertexPath);
-		fShaderFile.open(fragmentPath);
-
-		std::stringstream vShaderStream, fShaderStream;
-		// 读取文件内容到数据流中
-		vShaderStream << vShaderFile.rdbuf();
-		fShaderStream << fShaderFile.rdbuf();
-
-		// 转换为string
-		vertexCode = vShaderStream.str();
-		fragmentCode = fShaderStream.str();
-
-	}
-	catch (std::ifstream::failure e)
-	{
-		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
-	}
-
-	const char* vShaderCode = vertexCode.c_str();
-	const char* fShaderCode = fragmentCode.c_str();
-
-	// 2.编译shader
-	unsigned int vertexShader,fragmentShader;
-	int success;
-	char infoLog[512];
-
-	// vertex shader
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vShaderCode, NULL);
-	glCompileShader(vertexShader);
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-	// fragment shader
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fShaderCode, NULL);
-	glCompileShader(fragmentShader);
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-	*/
-
 	// 编译shader
 	unsigned int vertexShader, fragmentShader;
 	int success;
 	char infoLog[512];
-	vertexShader = LoadShaderFromFile(vertexPath, GL_VERTEX_SHADER);
-	fragmentShader = LoadShaderFromFile(fragmentPath, GL_FRAGMENT_SHADER);
+	vertexShader = loadShaderFromFile(vertexPath, GL_VERTEX_SHADER);
+	fragmentShader = loadShaderFromFile(fragmentPath, GL_FRAGMENT_SHADER);
 
 	// shader 程序
 	ID = glCreateProgram();
@@ -121,7 +58,24 @@ void ShaderManager::setMatrix(const std::string& name, glm::mat4& mat)
 	glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
-unsigned int ShaderManager::LoadShaderFromFile(const char* Path, GLenum type)
+void ShaderManager::linkShader(const char* shaderPath, GLenum type)
+{
+	unsigned int shader = loadShaderFromFile(shaderPath, type);
+	glAttachShader(ID, shader);
+	glLinkProgram(ID);
+	int success;
+	char infoLog[512];
+	// 打印错误
+	glGetProgramiv(ID, GL_LINK_STATUS, &success);
+	if (!success)
+	{
+		glGetProgramInfoLog(ID, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+	}
+	glDeleteShader(shader);
+}
+
+unsigned int ShaderManager::loadShaderFromFile(const char* Path, GLenum type)
 {
 	// 1.从文件路径中获取 vertex/fragment shader
 	std::string shaderCode;

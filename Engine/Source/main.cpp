@@ -49,126 +49,12 @@ int main()
 
 	// 设置顶点并且配置顶点数据
 	// ------------------------------------------------------------------
-	float cubeVertices[] = {
-		// Back face
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // Bottom-left
-		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f, // bottom-right    
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right              
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left                
-		// Front face
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-right        
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // top-left        
-		// Left face
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-left       
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-		// Right face
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right      
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right          
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-		// Bottom face          
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // top-left        
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-		// Top face
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right                 
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f, // bottom-left  
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f  // top-left              
+	float quadVertices[] = {
+		-0.5f,  0.5f, // 左上
+		 0.5f,  0.5f, // 右上
+		 0.5f, -0.5f, // 右下
+		-0.5f, -0.5f  // 左下
 	};
-	float planeVertices[] = {
-		// positions          // texture Coords 
-		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-		-5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-
-		 5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-		 5.0f, -0.5f, -5.0f,  2.0f, 2.0f
-	};
-	float transparentVertices[] = {
-		// positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
-		0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
-		0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
-		1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
-
-		0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
-		1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
-		1.0f,  0.5f,  0.0f,  1.0f,  0.0f
-	};
-	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-		// positions   // texCoords
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		-1.0f, -1.0f,  0.0f, 0.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-		 1.0f,  1.0f,  1.0f, 1.0f
-	};
-
-	// 草位置
-	// --------------------------------
-	std::vector<glm::vec3> vegetation
-	{
-		glm::vec3(-1.5f, 0.0f, -0.48f),
-		glm::vec3(1.5f, 0.0f, 0.51f),
-		glm::vec3(0.0f, 0.0f, 0.7f),
-		glm::vec3(-0.3f, 0.0f, -2.3f),
-		glm::vec3(0.5f, 0.0f, -0.6f)
-	};
-
-	// cube VAO
-	unsigned int cubeVAO, cubeVBO;
-	glGenVertexArrays(1, &cubeVAO);
-	glGenBuffers(1, &cubeVBO);
-	glBindVertexArray(cubeVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	// plane VAO
-	unsigned int planeVAO, planeVBO;
-	glGenVertexArrays(1, &planeVAO);
-	glGenBuffers(1, &planeVBO);
-	glBindVertexArray(planeVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	// transparent VAO
-	unsigned int transparentVAO, transparentVBO;
-	glGenVertexArrays(1, &transparentVAO);
-	glGenBuffers(1, &transparentVBO);
-	glBindVertexArray(transparentVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glBindVertexArray(0);
 
 	// screen quad VAO
 	unsigned int quadVAO, quadVBO;
@@ -178,58 +64,12 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-	// 加载贴图
-	// ------------------------------------------------------------------
-	unsigned int cubeTexure = loadTextureFromFile("./Materials/marble.jpg",GL_REPEAT);
-	unsigned int planeTexure = loadTextureFromFile("./Materials/metal.png", GL_REPEAT);
-	unsigned int glassTexture = loadTextureFromFile("./Materials/blending_transparent_window.png", GL_CLAMP_TO_EDGE);
-
-	// 创建纹理frambuffer和renderbuffer
-	// ------------------------------------------------------------------
-
-	// 纹理frambuffer
-	unsigned int framBuffer;
-	glGenFramebuffers(1, &framBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, framBuffer);
-
-	// 创建纹理attachment
-	unsigned int scenceColorBuffer;
-	glGenTextures(1, &scenceColorBuffer);
-	glBindTexture(GL_TEXTURE_2D, scenceColorBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (unsigned int)screenWidth, (unsigned int)screenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// 将它附加到当前绑定的帧缓冲对象
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scenceColorBuffer, 0);
-
-	// renderbuffer
-	unsigned int rbo;
-	glGenRenderbuffers(1, &rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (unsigned int)screenWidth, (unsigned int)screenHeight);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	
-	// 将它附加到当前绑定的帧缓冲对象
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
 	// 加载材质
 	// ------------------------------------------------------------------
-	ShaderManager shader("./Engine/Shader/Blending/VertexShader.glsl", "./Engine/Shader/Blending/FragmentShader.glsl");
-	ShaderManager screenShader("./Engine/Shader/Framebuffer/VertexShader.glsl", "./Engine/Shader/Framebuffer/FragmentShader.glsl");
-
-
+	ShaderManager shader("./Engine/Shader/GeometryShader/VertexShader.glsl", "./Engine/Shader/GeometryShader/FragmentShader.glsl");
+	shader.linkShader("./Engine/Shader/GeometryShader/GeometryShader.glsl", GL_GEOMETRY_SHADER);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -242,69 +82,13 @@ int main()
 		// 检查各种回调事件，鼠标键盘输入等
 		glfwPollEvents();
 
-		glBindFramebuffer(GL_FRAMEBUFFER, framBuffer);
-
-		/*
-		* 第一步 绘制场景
-		*/
-
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		//glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glEnable(GL_DEPTH_TEST);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-		// 处理材质
+		// 绘制
 		// ------------------------------------------------------------------
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 		shader.use();
-		glActiveTexture(GL_TEXTURE0);
-
-		// 绘制cube
-		// ------------------------------------------------------------------
-		glBindVertexArray(cubeVAO);
-		glBindTexture(GL_TEXTURE_2D, cubeTexure);
-		shader.setInt("diffuse", 0);
-		setModelTransform(shader, glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(1.0f), 0.f);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		setModelTransform(shader, glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(1.0f), 0.f);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		// 绘制plane
-		// ------------------------------------------------------------------
-		glBindVertexArray(planeVAO);
-		glBindTexture(GL_TEXTURE_2D, planeTexure);
-		shader.setInt("diffuse", 0);
-		setModelTransform(shader, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f), 0.f);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDepthMask(GL_FALSE);
-		// 绘制草
-		// ------------------------------------------------------------------
-		for (unsigned int i = 0; i < vegetation.size(); i++)
-		{
-			glBindVertexArray(transparentVAO);
-			glBindTexture(GL_TEXTURE_2D, glassTexture);
-			shader.setInt("diffuse", 0);
-			setModelTransform(shader, vegetation[i], glm::vec3(1.0f), 0.f);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-		}
-		glDepthMask(GL_TRUE);
-		glDisable(GL_BLEND);  
-
-		/*
-		* 第二步 场景绘制到一个面片上
-		*/
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		glEnable(GL_DEPTH_TEST);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		screenShader.use();
 		glBindVertexArray(quadVAO);
-		glBindTexture(GL_TEXTURE_2D, scenceColorBuffer);
-		setModelTransform(screenShader, glm::vec3(0.f,0.f,2.f), glm::vec3(1.f), 0.f);
-		screenShader.setInt("diffuse", 0);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDrawArrays(GL_POINTS, 0, 4);
 
 		// swapbuffer
 		glfwSwapBuffers(window);

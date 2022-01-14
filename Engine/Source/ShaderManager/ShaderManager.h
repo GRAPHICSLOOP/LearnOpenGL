@@ -31,8 +31,10 @@ public:
 	void setVec3(const std::string& name, glm::vec3 value) const;
 	void setMatrix(const std::string& name,glm::mat4& mat);
 
+	// 链接一个新的shader
+	void linkShader(const char* shaderPath, GLenum type);
 private:
 	// 加载shader从文件中
-	unsigned int LoadShaderFromFile(const char* Path, GLenum type);
+	unsigned int loadShaderFromFile(const char* Path, GLenum type);
 };
 
