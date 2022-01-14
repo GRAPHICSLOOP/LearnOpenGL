@@ -227,7 +227,7 @@ int main()
 	// 加载材质
 	// ------------------------------------------------------------------
 	ShaderManager shader("./Engine/Shader/Blending/VertexShader.glsl", "./Engine/Shader/Blending/FragmentShader.glsl");
-	ShaderManager screenShader("./Engine/Shader/Frambuffer/VertexShader.glsl", "./Engine/Shader/Frambuffer/FragmentShader.glsl");
+	ShaderManager screenShader("./Engine/Shader/Framebuffer/VertexShader.glsl", "./Engine/Shader/Framebuffer/FragmentShader.glsl");
 
 
 
