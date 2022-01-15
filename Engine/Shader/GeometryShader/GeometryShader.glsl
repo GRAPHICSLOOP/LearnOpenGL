@@ -1,13 +1,29 @@
 ﻿#version 330 core
 layout (points) in;
-layout (line_strip, max_vertices = 2) out;
+layout (triangle_strip, max_vertices = 5) out;
+
+in VS_Out{
+    vec3 color;
+} gs_in[];
+
+out vec3 fColor;
+void build_house(vec4 position)
+{   
+    fColor = gs_in[0].color;
+    gl_Position = position + vec4(-0.2, -0.2, 0.0, 0.0);    // 1:左下
+    EmitVertex();   
+    gl_Position = position + vec4( 0.2, -0.2, 0.0, 0.0);    // 2:右下
+    EmitVertex();
+    gl_Position = position + vec4(-0.2,  0.2, 0.0, 0.0);    // 3:左上
+    EmitVertex();
+    gl_Position = position + vec4( 0.2,  0.2, 0.0, 0.0);    // 4:右上
+    EmitVertex();
+    gl_Position = position + vec4( 0.0,  0.4, 0.0, 0.0);    // 5:顶部
+    fColor = vec3(1.0f,1.0f,1.0f);
+    EmitVertex();
+    EndPrimitive();
+}
 
 void main() {    
-    gl_Position = gl_in[0].gl_Position + vec4(-0.1, 0.0, 0.0, 0.0); 
-    EmitVertex();
-
-    gl_Position = gl_in[0].gl_Position + vec4( 0.1, 0.0, 0.0, 0.0);
-    EmitVertex();
-
-    EndPrimitive();
+    build_house(gl_in[0].gl_Position);
 }
