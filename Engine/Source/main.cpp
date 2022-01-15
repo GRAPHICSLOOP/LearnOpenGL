@@ -47,14 +47,59 @@ int main()
 	if (window == NULL)
 		return -1;
 
-	Model model("./Model/nanosuit/nanosuit.obj");
+	float quadVertices[] = {
+		// 位置          // 颜色
+		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+		-0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
+
+		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+		 0.05f,  0.05f,  0.0f, 1.0f, 1.0f
+	};
 	
+	unsigned int VAO, VBO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);  
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glBindVertexArray(0);
+
 	// 加载材质
 	// ------------------------------------------------------------------
-	ShaderManager shader("./Engine/Shader/GeometryShader/VertexModelShader.glsl", "./Engine/Shader/GeometryShader/FragmentModelShader.glsl");
-	//shader.linkShader("./Engine/Shader/GeometryShader/GeometryModelShader.glsl", GL_GEOMETRY_SHADER);
-	ShaderManager normalShader("./Engine/Shader/GeometryShader/VertexModelShader.glsl", "./Engine/Shader/GeometryShader/FragmentShowNormalShader.glsl");
-	normalShader.linkShader("./Engine/Shader/GeometryShader/GeometryShowNormalShader.glsl", GL_GEOMETRY_SHADER);
+	ShaderManager shader("./Engine/Shader/Instancing/VertexShader.glsl", "./Engine/Shader/Instancing/FragmentShader.glsl");
+
+	// 设置偏移
+	// ------------------------------------------------------------------
+	glm::vec2 translations[100];
+	int index = 0;
+	float offset = 0.1f;
+	for (int y = -10; y < 10; y += 2)
+	{
+		for (int x = -10; x < 10; x += 2)
+		{
+			glm::vec2 translation;
+			translation.x = (float)x / 10.0f + offset;
+			translation.y = (float)y / 10.0f + offset;
+			translations[index++] = translation;
+		}
+	}
+
+	shader.use();
+	std::string sindex;
+	for (int i = 0; i < 100; i++)
+	{
+		std::stringstream ss;
+		ss << i;
+		sindex = ss.str();
+		shader.setVec2(("offset[" + sindex + "]").c_str(), translations[i]);
+	}
 
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
@@ -73,12 +118,8 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shader.use();
-		setModelTransform(shader, glm::vec3(0.f), glm::vec3(0.2f), 0.f);
-		//shader.setFloat("time", lastFrame);
-		model.Draw(&shader);
-		normalShader.use();
-		setModelTransform(normalShader, glm::vec3(0.f), glm::vec3(0.2f), 0.f);
-		model.Draw(&normalShader);
+		glBindVertexArray(VAO);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
 
 		// swapbuffer
 		glfwSwapBuffers(window);
