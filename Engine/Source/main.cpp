@@ -47,32 +47,14 @@ int main()
 	if (window == NULL)
 		return -1;
 
-	// 设置顶点并且配置顶点数据
-	// ------------------------------------------------------------------
-	float quadVertices[] = {
-		-0.5f,  0.5f, 1.0f,0.0f,0.0f, // 左上
-		 0.5f,  0.5f, 0.0f,1.0f,0.0f,// 右上
-		 0.5f, -0.5f, 0.0f,0.0f,1.0f,// 右下
-		-0.5f, -0.5f, 1.0f,1.0f,0.0f// 左下
-	};
-
-	// screen quad VAO
-	unsigned int quadVAO, quadVBO;
-	glGenVertexArrays(1, &quadVAO);
-	glGenBuffers(1, &quadVBO);
-	glBindVertexArray(quadVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2*sizeof(float)));
-	glEnableVertexAttribArray(1);
-
+	Model model("./Model/nanosuit/nanosuit.obj");
+	
 	// 加载材质
 	// ------------------------------------------------------------------
-	ShaderManager shader("./Engine/Shader/GeometryShader/VertexShader.glsl", "./Engine/Shader/GeometryShader/FragmentShader.glsl");
-	shader.linkShader("./Engine/Shader/GeometryShader/GeometryShader.glsl", GL_GEOMETRY_SHADER);
+	ShaderManager shader("./Engine/Shader/GeometryShader/VertexModelShader.glsl", "./Engine/Shader/GeometryShader/FragmentModelShader.glsl");
+	shader.linkShader("./Engine/Shader/GeometryShader/GeometryModelShader.glsl", GL_GEOMETRY_SHADER);
 
+	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
 	{
 		// 每帧开始时计算时间
@@ -86,11 +68,12 @@ int main()
 
 		// 绘制
 		// ------------------------------------------------------------------
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shader.use();
-		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_POINTS, 0, 4);
+		setModelTransform(shader, glm::vec3(0.f), glm::vec3(0.2f), 0.f);
+		shader.setFloat("time", lastFrame);
+		model.Draw(&shader);
 
 		// swapbuffer
 		glfwSwapBuffers(window);
