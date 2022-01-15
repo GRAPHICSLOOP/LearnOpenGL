@@ -52,7 +52,9 @@ int main()
 	// 加载材质
 	// ------------------------------------------------------------------
 	ShaderManager shader("./Engine/Shader/GeometryShader/VertexModelShader.glsl", "./Engine/Shader/GeometryShader/FragmentModelShader.glsl");
-	shader.linkShader("./Engine/Shader/GeometryShader/GeometryModelShader.glsl", GL_GEOMETRY_SHADER);
+	//shader.linkShader("./Engine/Shader/GeometryShader/GeometryModelShader.glsl", GL_GEOMETRY_SHADER);
+	ShaderManager normalShader("./Engine/Shader/GeometryShader/VertexModelShader.glsl", "./Engine/Shader/GeometryShader/FragmentShowNormalShader.glsl");
+	normalShader.linkShader("./Engine/Shader/GeometryShader/GeometryShowNormalShader.glsl", GL_GEOMETRY_SHADER);
 
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
@@ -72,8 +74,11 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shader.use();
 		setModelTransform(shader, glm::vec3(0.f), glm::vec3(0.2f), 0.f);
-		shader.setFloat("time", lastFrame);
+		//shader.setFloat("time", lastFrame);
 		model.Draw(&shader);
+		normalShader.use();
+		setModelTransform(normalShader, glm::vec3(0.f), glm::vec3(0.2f), 0.f);
+		model.Draw(&normalShader);
 
 		// swapbuffer
 		glfwSwapBuffers(window);

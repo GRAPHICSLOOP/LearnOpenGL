@@ -19,6 +19,7 @@ void main()
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(aPos,1.0f);
 	texrtureCoord = aTextureCoord;
 	//normal = aNormal; 对象空间
-	vs_out.normal = vec3(transpose(inverse(modelMatrix)) * vec4(aNormal,0.f)); // 世界空间
+	mat4 normalMatrix = transpose(inverse(viewMatrix * modelMatrix));
+	vs_out.normal = normalize(vec3(projectionMatrix * normalMatrix * vec4(aNormal,0.f))); // 裁剪空间
 	vs_out.texCoord = texrtureCoord;
 }
