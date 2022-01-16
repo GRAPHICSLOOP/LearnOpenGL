@@ -47,34 +47,6 @@ int main()
 	if (window == NULL)
 		return -1;
 
-	float quadVertices[] = {
-		// 位置          // 颜色
-		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-		-0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
-
-		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-		 0.05f,  0.05f,  0.0f, 1.0f, 1.0f
-	};
-	
-	unsigned int VAO, VBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);  
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glBindVertexArray(0);
-
-	// 加载材质
-	// ------------------------------------------------------------------
-	ShaderManager shader("./Engine/Shader/Instancing/VertexShader.glsl", "./Engine/Shader/Instancing/FragmentShader.glsl");
-
 	// 设置偏移
 	// ------------------------------------------------------------------
 	glm::vec2 translations[100];
@@ -91,7 +63,51 @@ int main()
 		}
 	}
 
-	shader.use();
+	float quadVertices[] = {
+		// 位置          // 颜色
+		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+		-0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
+
+		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+		 0.05f,  0.05f,  0.0f, 1.0f, 1.0f
+	};
+
+	// 实例数组
+	// ------------------------------------------------------------------
+	unsigned int insVBO;
+	glGenBuffers(1, &insVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, insVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(translations), &translations[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
+
+	
+	unsigned int VAO, VBO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);  
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+	glBindBuffer(GL_ARRAY_BUFFER, insVBO);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	glVertexAttribDivisor(2, 1);
+	glBindVertexArray(0);
+
+	// 加载材质
+	// ------------------------------------------------------------------
+	ShaderManager shader("./Engine/Shader/Instancing/VertexInsShader.glsl", "./Engine/Shader/Instancing/FragmentShader.glsl");
+
+
+
+	/*shader.use();
 	std::string sindex;
 	for (int i = 0; i < 100; i++)
 	{
@@ -99,7 +115,11 @@ int main()
 		ss << i;
 		sindex = ss.str();
 		shader.setVec2(("offset[" + sindex + "]").c_str(), translations[i]);
-	}
+	}*/
+
+
+
+	
 
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
