@@ -47,79 +47,50 @@ int main()
 	if (window == NULL)
 		return -1;
 
-	// 设置偏移
+	// 加载模型
 	// ------------------------------------------------------------------
-	glm::vec2 translations[100];
-	int index = 0;
-	float offset = 0.1f;
-	for (int y = -10; y < 10; y += 2)
-	{
-		for (int x = -10; x < 10; x += 2)
-		{
-			glm::vec2 translation;
-			translation.x = (float)x / 10.0f + offset;
-			translation.y = (float)y / 10.0f + offset;
-			translations[index++] = translation;
-		}
-	}
-
-	float quadVertices[] = {
-		// 位置          // 颜色
-		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-		-0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
-
-		-0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-		 0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-		 0.05f,  0.05f,  0.0f, 1.0f, 1.0f
-	};
-
-	// 实例数组
-	// ------------------------------------------------------------------
-	unsigned int insVBO;
-	glGenBuffers(1, &insVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, insVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(translations), &translations[0], GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
-
-	
-	unsigned int VAO, VBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);  
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
-	glBindBuffer(GL_ARRAY_BUFFER, insVBO);
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-	glVertexAttribDivisor(2, 1);
-	glBindVertexArray(0);
+	Model planet("./Model/planet/planet.obj");
+	Model rock("./Model/rock/rock.obj");
 
 	// 加载材质
 	// ------------------------------------------------------------------
-	ShaderManager shader("./Engine/Shader/Instancing/VertexInsShader.glsl", "./Engine/Shader/Instancing/FragmentShader.glsl");
+	ShaderManager shaderInstance("./Engine/Shader/Instancing/VertexModelShader.glsl", "./Engine/Shader/Instancing/FragmentModelShader.glsl");
+	ShaderManager shader("./Engine/Shader/Model/VertexShader.glsl", "./Engine/Shader/Model/FragmentSimpleShader.glsl");
 
-
-
-	/*shader.use();
-	std::string sindex;
-	for (int i = 0; i < 100; i++)
+	// 设置陨石位置
+	const unsigned int amount = 100000;
+	glm::mat4* modelMatrices;
+	modelMatrices = new glm::mat4[amount];
+	srand((unsigned int)glfwGetTime()); // 初始化随机种子    
+	float radius = 20.0;
+	float offset = 10.5f;
+	for (unsigned int i = 0; i < amount; i++)
 	{
-		std::stringstream ss;
-		ss << i;
-		sindex = ss.str();
-		shader.setVec2(("offset[" + sindex + "]").c_str(), translations[i]);
-	}*/
+		glm::mat4 model = glm::mat4(1.f);
+		glm::mat4 ins = glm::mat4(1.f);
 
+		// 1. 缩放：在 0.05 和 0.25f 之间缩放
+		float scale = (float)((rand() % 10) / 1000.0f + 0.001);
+		model = glm::scale(ins, glm::vec3(scale));
 
+		// 2. 旋转：绕着一个（半）随机选择的旋转轴向量进行随机的旋转
+		float rotAngle = (float)(rand() % 360);
+		model = glm::rotate(ins, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f)) * model;
 
-	
+		// 3. 位移：分布在半径为 'radius' 的圆形上，偏移的范围是 [-offset, offset]
+		float angle = (float)i / (float)amount * 360.0f;
+		float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		float x = sin(angle) * radius + displacement;
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		float y = displacement * 0.4f; // 让行星带的高度比x和z的宽度要小
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		float z = cos(angle) * radius + displacement;
+		model = glm::translate(ins, glm::vec3(x, y, z)) * model;
+
+		// 4. 添加到矩阵的数组中
+		modelMatrices[i] = model;
+	}
+	rock.setInstance(modelMatrices, amount);
 
 	glEnable(GL_DEPTH_TEST);
 	while (!glfwWindowShouldClose(window))
@@ -135,11 +106,24 @@ int main()
 
 		// 绘制
 		// ------------------------------------------------------------------
-		glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shader.use();
-		glBindVertexArray(VAO);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+		setModelTransform(shader, glm::vec3(0.f), glm::vec3(1.f), 0.f);
+		planet.Draw(&shader);
+
+		shaderInstance.use();
+		// 绘制陨石
+		glm::mat4 viewMatrix = glm::mat4(1.0f);
+		viewMatrix = cameraManager.getLookAtMatrix();
+
+		glm::mat4 projectionMatrix = glm::mat4(1.0f);
+		projectionMatrix = glm::perspective(glm::radians(45.f), screenWidth / screenHeight, 0.1f, 100.f);
+
+
+		shaderInstance.setMatrix("viewMatrix", viewMatrix);
+		shaderInstance.setMatrix("projectionMatrix", projectionMatrix);
+		rock.DrawInstance(&shaderInstance, amount);
 
 		// swapbuffer
 		glfwSwapBuffers(window);
@@ -228,7 +212,7 @@ void proccessInput(GLFWwindow* window)
 	}
 
 
-	float cameraSpeed = 1.5f * deltaTime;
+	float cameraSpeed = 4.5f * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		cameraManager.getCameraPositionRef() += cameraSpeed * cameraManager.getCameraFrontDir();

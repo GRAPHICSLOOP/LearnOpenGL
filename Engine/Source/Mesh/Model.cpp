@@ -10,6 +10,47 @@ void Model::Draw(ShaderManager* shader)
 	}
 }
 
+void Model::DrawInstance(ShaderManager* shader, int instanceNumb)
+{
+	unsigned int size = meshs.size();
+
+	for (unsigned int i = 0; i < size; i++)
+	{
+		meshs[i].DrawInstance(shader,instanceNumb);
+	}
+}
+
+void Model::setInstance(glm::mat4* model,unsigned int instanceNumb)
+{
+	unsigned int size = meshs.size();
+
+	unsigned int VBO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * instanceNumb, model, GL_STATIC_DRAW);
+
+	GLsizei vec4Size = sizeof(glm::vec4);
+	for (unsigned int i = 0; i < size; i++)
+	{
+		unsigned int VAO = meshs[i].getVAO();
+		glBindVertexArray(VAO);
+
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
+		glEnableVertexAttribArray(5);
+		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+		glEnableVertexAttribArray(6);
+		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+		glVertexAttribDivisor(3, 1);
+		glVertexAttribDivisor(4, 1);
+		glVertexAttribDivisor(5, 1);
+		glVertexAttribDivisor(6, 1);
+		glBindVertexArray(0);
+	}
+}
+
 void Model::LoadModel(std::string path)
 {
 	Assimp::Importer importer;

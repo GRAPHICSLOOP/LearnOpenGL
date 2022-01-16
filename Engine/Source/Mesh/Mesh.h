@@ -34,7 +34,12 @@ public:
 	
 	// 绘制
 	void Draw(ShaderManager* shader);
+	void DrawInstance(ShaderManager* shader,int instanceNumb);
 
+	unsigned int getVAO()
+	{
+		return VAO;
+	}
 private:
 
 	/* 渲染数据 */

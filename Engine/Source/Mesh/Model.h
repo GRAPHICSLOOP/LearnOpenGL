@@ -21,7 +21,9 @@ public:
 	}
 
 	void Draw(ShaderManager* shader);
+	void DrawInstance(ShaderManager* shader,int instanceNumb);
 
+	void setInstance(glm::mat4* model, unsigned int instanceNumb);
 private:
 	/* 模型数据 */
 
