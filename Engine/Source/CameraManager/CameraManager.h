@@ -1,6 +1,6 @@
 ﻿#pragma once
 // 相机使用右手坐标系
-// +z是从屏幕指向你的
+// +z是从屏幕指向你的 中指是x 拇指是y 食指是z
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
