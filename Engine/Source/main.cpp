@@ -38,6 +38,9 @@ void proccessInput(GLFWwindow* window);
 // 设置模型变化
 void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale, float rotation);
 
+// 获取模型矩阵
+glm::mat4 getModelMatrix(glm::vec3 location, glm::vec3 scale, float rotation);
+
 // 载入贴图
 unsigned int loadTextureFromFile(const char* texturePath, GLenum clampType);
 
@@ -47,6 +50,7 @@ unsigned int createCube();
 // 生成panel
 unsigned int createPlane();
 
+unsigned int createQuad();
 
 int main()
 {
@@ -58,16 +62,48 @@ int main()
 	// ------------------------------------------------------------------
 	unsigned int cubeVAO = createCube();
 	unsigned int planeVAO = createPlane();
+	unsigned int quadVAO = createQuad();
 
 
 	// 加载材质
 	// ------------------------------------------------------------------
-	ShaderManager shaderInstance("./Engine/Shader/Instancing/VertexModelShader.glsl", "./Engine/Shader/Instancing/FragmentModelShader.glsl");
+	ShaderManager simpleDepthShader("./Engine/Shader/ShadowMap/vsSimpleDepth.glsl", "./Engine/Shader/ShadowMap/fsSimpleDepth.glsl");
+	ShaderManager debugDepthShader("./Engine/Shader/ShadowMap/vsDebugDepth.glsl", "./Engine/Shader/ShadowMap/fsDebugDepth.glsl");
 	ShaderManager shader("./Engine/Shader/ShadowMap/VertexShader.glsl", "./Engine/Shader/ShadowMap/FragmentSimpleShader.glsl");
 
 	// 加载贴图
+	// ------------------------------------------------------------------
 	unsigned int textureCube = loadTextureFromFile("./resources/textures/toy_box_diffuse.png", GL_REPEAT);
 	unsigned int texturePlane = loadTextureFromFile("./resources/textures/wood.png", GL_REPEAT);
+
+	// 生成深度framebuffer
+	// ------------------------------------------------------------------
+	unsigned int depthMapFBO;
+	glGenFramebuffers(1, &depthMapFBO);
+
+
+	// 在生成一张深度贴图用来渲染到这上面的
+	const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	GLuint depthMap;
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// 我们需要的只是在从光的透视图下渲染场景的时候深度信息，所以颜色缓冲没有用。
+	// 然而，不包含颜色缓冲的帧缓冲对象是不完整的，所以我们需要显式告诉OpenGL我们不适用任何颜色数据进行渲染。
+	// 我们通过将调用glDrawBuffer和glReadBuffer把读和绘制缓冲设置为GL_NONE来做这件事。
+	if (glCheckFramebufferStatus(depthMapFBO) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "GL_FRAMEBUFFER_UNCOMPLETE" << std::endl;
 
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
@@ -82,11 +118,60 @@ int main()
 		// 检查各种回调事件，鼠标键盘输入等
 		glfwPollEvents();
 
-		// 绘制
-		// ------------------------------------------------------------------
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// 绘制
+		// ------------------------------------------------------------------
+
+		// 1.先渲染深度贴图
+		simpleDepthShader.use();
+		GLfloat near_plane = 1.0f, far_plane = 7.5f;
+		glm::mat4 modelMatrix;
+		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+		glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 lightViewMatrix = lightProjection * lightView;
+		simpleDepthShader.setMatrix("lightViewMatrix", lightViewMatrix);
+
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glBindVertexArray(cubeVAO);
+
+		modelMatrix = getModelMatrix(glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(0.6f), 40.f);
+		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		modelMatrix = getModelMatrix(glm::vec3(2.0f, 0.0f, 1.0f), glm::vec3(0.6f), 0.f);
+		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		modelMatrix = getModelMatrix(glm::vec3(-1.0f, 0.0f, 2.0f), glm::vec3(0.6f), 0.f);
+		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glBindVertexArray(planeVAO);
+		modelMatrix = getModelMatrix(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.f), 0.f);
+		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		// 2.绘制深度图
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, screenWidth,screenHeight);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		debugDepthShader.use();
+		debugDepthShader.setInt("depthTexture", 0);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		
+
+		/*
+		// 2.绘制场景
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		shader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureCube);
@@ -105,6 +190,7 @@ int main()
 		glBindVertexArray(planeVAO);
 		setModelTransform(shader, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+		*/
 
 
 		// swapbuffer
@@ -244,6 +330,13 @@ void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,
 	shader.setMatrix("projectionMatrix", projectionMatrix);
 }
 
+glm::mat4 getModelMatrix(glm::vec3 location, glm::vec3 scale, float rotation)
+{
+	glm::mat4 modelMatrix = glm::mat4(1.0f);
+	modelMatrix = glm::translate(modelMatrix, location) * glm::rotate(modelMatrix, rotation, glm::vec3(1.0f, 0.3f, 0.5f)) * glm::scale(modelMatrix, scale);
+	return modelMatrix;
+}
+
 unsigned int loadTextureFromFile(const char* texturePath,GLenum clampType)
 {
 	// 0.翻转图片
@@ -378,4 +471,30 @@ unsigned int createPlane()
 	glBindVertexArray(0);
 
 	return planeVAO;
+}
+
+unsigned int createQuad()
+{
+	unsigned int quadVAO, quadVBO;
+
+	float quadVertices[] = {
+		// positions        // texture Coords
+		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+		1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+	};
+	// setup plane VAO
+	glGenVertexArrays(1, &quadVAO);
+	glGenBuffers(1, &quadVBO);
+	glBindVertexArray(quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glBindVertexArray(0);
+
+	return quadVAO;
 }
