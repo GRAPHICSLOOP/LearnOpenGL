@@ -79,7 +79,7 @@ float ShadowCalculation(vec3 norm)
 	float currentDepth = lightViewMapPos.z - bias;
 	float mapDepth = texture(_DepthMap,lightViewMapPos.xy).r;
 
-	float shadow = currentDepth < mapDepth ? 0.f : 1.f;
+	float shadow = currentDepth < mapDepth ? 0.f : 1.f;// 当前深度值小于_DepthMap说明不在阴影中
 
 	return shadow;
 }
