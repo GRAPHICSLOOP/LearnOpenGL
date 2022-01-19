@@ -71,10 +71,12 @@ int main()
 	ShaderManager simpleDepthShader("./Engine/Shader/ShadowMap/vsSimpleDepth.glsl", "./Engine/Shader/ShadowMap/fsSimpleDepth.glsl");
 	ShaderManager debugDepthShader("./Engine/Shader/ShadowMap/vsDebugDepth.glsl", "./Engine/Shader/ShadowMap/fsDebugDepth.glsl");
 	ShaderManager shadowMapShader("./Engine/Shader/ShadowMap/vsShadowMap.glsl", "./Engine/Shader/ShadowMap/fsShadowMap.glsl");
+	ShaderManager lightShader("./Engine/Shader/ShadowMap/vsLightShader.glsl", "./Engine/Shader/ShadowMap/fsLightShader.glsl");
 
 	// 加载贴图
 	// ------------------------------------------------------------------
-	unsigned int textureCube = loadTextureFromFile("./resources/textures/toy_box_diffuse.png", GL_REPEAT);
+	unsigned int textureCube = loadTextureFromFile("./resources/textures/container2.png", GL_REPEAT);
+	unsigned int textureCube_specular = loadTextureFromFile("./resources/textures/container2_specular.png", GL_REPEAT);
 	unsigned int texturePlane = loadTextureFromFile("./resources/textures/wood.png", GL_REPEAT);
 
 	// 生成深度framebuffer
@@ -84,6 +86,7 @@ int main()
 
 
 	// 在生成一张深度贴图用来渲染到这上面的
+
 	const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 	GLuint depthMap;
 	glGenTextures(1, &depthMap);
@@ -110,7 +113,8 @@ int main()
 	//glEnable(GL_CULL_FACE);
 
 	//glm::vec3 lightPos = glm::vec3(-2.0f, 4.0f, -1.0f);
-	glm::vec3 lightPos = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 lightPos = glm::vec3(2.0f,2.0f, 2.0f);
+	cameraManager.setCameraPosition(lightPos);
 	while (!glfwWindowShouldClose(window))
 	{
 		// 每帧开始时计算时间
@@ -127,30 +131,29 @@ int main()
 
 		// 绘制
 		// ------------------------------------------------------------------
-
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		// 1.先渲染深度贴图
 		simpleDepthShader.use();
-		GLfloat near_plane = 1.0f, far_plane = 7.5f;
+		GLfloat near_plane = 1.0f, far_plane = 6.5f;
 		glm::mat4 modelMatrix;
 		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
 		glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4 lightViewMatrix = lightProjection * lightView;
 		simpleDepthShader.setMatrix("lightViewMatrix", lightViewMatrix);
 
-		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glBindVertexArray(cubeVAO);
 
-		modelMatrix = getModelMatrix(cubePosition[0], glm::vec3(0.6f), 40.f);
+		modelMatrix = getModelMatrix(cubePosition[0], glm::vec3(1.f), 40.f);
 		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		modelMatrix = getModelMatrix(cubePosition[1], glm::vec3(0.6f), 0.f);
+		modelMatrix = getModelMatrix(cubePosition[1], glm::vec3(1.f), 0.f);
 		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		modelMatrix = getModelMatrix(cubePosition[2], glm::vec3(0.6f), 0.f);
+		modelMatrix = getModelMatrix(cubePosition[2], glm::vec3(1.f), 0.f);
 		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -178,39 +181,50 @@ int main()
 		// 2.绘制场景
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		shadowMapShader.use();
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		shadowMapShader.setInt("depthMap", 1);
+		shadowMapShader.setInt("_DepthMap", 2);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureCube);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textureCube_specular);
 		shadowMapShader.setMatrix("lightViewMatrix",lightViewMatrix);
 
 		shadowMapShader.setInt("_Material.diffuse", 0);
-		shadowMapShader.setFloat("_Material.shininess", 128.f);
+		shadowMapShader.setInt("_Material.specular", 1);
+		shadowMapShader.setFloat("_Material.shininess", 300.f);
 
 		shadowMapShader.setVec3("_Light.direction", glm::normalize(-lightPos));// 记得normal
-		shadowMapShader.setVec3("_Light.ambient", glm::vec3(0.2f));
-		shadowMapShader.setVec3("_Light.lightColor", glm::vec3(0.5f));
+		shadowMapShader.setFloat("_Light.ambient", 0.4f);
+		shadowMapShader.setVec3("_Light.lightColor", glm::vec3(1.f));
 
 		shadowMapShader.setVec3("_ViewPos", cameraManager.getCameraPosition());
+		shadowMapShader.setFloat("_PixelSize", 20.f/(1024.f * 2.f));
 
 		glBindVertexArray(cubeVAO);
-		setModelTransform(shadowMapShader, cubePosition[0], glm::vec3(0.6f), 40.f);
+		setModelTransform(shadowMapShader, cubePosition[0], glm::vec3(1.f), 40.f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		setModelTransform(shadowMapShader, cubePosition[1], glm::vec3(0.6f), 0.f);
+		setModelTransform(shadowMapShader, cubePosition[1], glm::vec3(1.f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		setModelTransform(shadowMapShader, cubePosition[2], glm::vec3(0.6f), 0.f);
+		setModelTransform(shadowMapShader, cubePosition[2], glm::vec3(1.f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texturePlane);
 		shadowMapShader.setInt("material.diffuse", 0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
 		glBindVertexArray(planeVAO);
 		setModelTransform(shadowMapShader, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		
-
-
+		lightShader.use();
+		setModelTransform(lightShader, lightPos, glm::vec3(0.1f), 0.f);
+		glBindVertexArray(cubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		
 		// swapbuffer
 		glfwSwapBuffers(window);
 	}
@@ -232,7 +246,7 @@ GLFWwindow* initWindow(int width, int height)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 4);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(width, height, "LearnOpenGL", NULL, NULL);
 
 	if (window == NULL)
 	{
@@ -398,49 +412,50 @@ unsigned int createCube()
 {
 	unsigned int cubeVAO,cubeVBO;
 	float vertices[] = {
-		// back face
-		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
-		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-		-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-		// front face
-		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-		 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-		-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-		// left face
-		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		// right face
-		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
-		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
-		// bottom face
-		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		 1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		-1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		// top face
-		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		 1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		 1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
-		 1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+		// positions          // normals           // texture coords
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
 	};
+
 	glGenVertexArrays(1, &cubeVAO);
 	glGenBuffers(1, &cubeVBO);
 	// fill buffer
