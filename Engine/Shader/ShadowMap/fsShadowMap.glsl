@@ -31,7 +31,7 @@ uniform Light _Light;
 
 vec3 CalcDirLight(vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor);
 
-float CalcShadow(vec3 norm);
+float ShadowCalculation(vec3 norm);
 
 void main()
 {
@@ -48,7 +48,7 @@ void main()
 
 vec3 CalcDirLight(vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor)
 {
-	float shadow = CalcShadow(norm);
+	float shadow = ShadowCalculation(norm);
 	
 	// 环境光
 	vec3 ambient = _Light.ambient * vec3(objectColor);
@@ -69,7 +69,7 @@ vec3 CalcDirLight(vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor)
 	return result;
 };
 
-float CalcShadow(vec3 norm)
+float ShadowCalculation(vec3 norm)
 {
 	float bias = max((1 - dot(-_Light.direction,norm))*_PixelSize,0.001);
 	// 此时得到还只是-1到1的标准设备区 我们需要转换到0-1
