@@ -56,3 +56,6 @@ LearnOpenGL.vcxproj
 LearnOpenGL.vcxproj.filters
 LearnOpenGL.vcxproj.user
 Debug/
+.vs/slnx.sqlite
+.vs/CMake Overview
+.vs/VSWorkspaceState.json
