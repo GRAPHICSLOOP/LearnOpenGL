@@ -71,16 +71,23 @@ vec3 CalcDirLight(vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor)
 
 float ShadowCalculation(vec3 norm)
 {
-
+	float shadow = 0.0f;
 	float bias = max((1.f - dot(-_Light.direction,norm)) *_PixelSize,0.0001);// 确保光线和法线平行时，要减去一个误差
 	// 此时得到还只是-1到1的标准设备区 我们需要转换到0-1
 	vec3 lightViewMapPos = vs_in.lightViewPos.xyz / vs_in.lightViewPos.w;
 	lightViewMapPos = lightViewMapPos * 0.5f + 0.5f;
 
-	float currentDepth = lightViewMapPos.z - bias;
-	float mapDepth = texture(_DepthMap,lightViewMapPos.xy).r;
-  
-	float shadow = currentDepth < mapDepth ? 0.f : 1.f;// 当前深度值小于_DepthMap说明不在阴影中
+	vec2 texelSize = 1.0 / vec2(800.f,600.f);
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float pcfDepth = texture(_DepthMap, lightViewMapPos.xy + vec2(x, y) * texelSize).r; 
+			float currentDepth = lightViewMapPos.z - bias;
+			shadow +=  currentDepth < pcfDepth ? 0.f : 1.f;// 当前深度值小于_DepthMap说明不在阴影中     
+		}    
+	}
+	shadow /= 9.0;
 
 	return shadow;
 }
