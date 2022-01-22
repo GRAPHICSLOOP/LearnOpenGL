@@ -64,7 +64,7 @@ int main()
 	unsigned int planeVAO = createPlane();
 	unsigned int quadVAO = createQuad();
 
-	std::vector<glm::vec3> cubePosition = { glm::vec3(0.0f, 1.5f, 0.0f),glm::vec3(-2.0f, 0.0f, -2.0f),glm::vec3(-1.0f, 0.0f, 2.0f)};
+	std::vector<glm::vec3> cubePosition = { glm::vec3(2.0f, 1.5f, 0.0f),glm::vec3(2.0f, 0.0f, 2.0f),glm::vec3(-1.0f, 0.0f, 2.0f)};
 
 	// 加载材质
 	// ------------------------------------------------------------------
@@ -113,8 +113,7 @@ int main()
 	//glEnable(GL_CULL_FACE);
 
 	//glm::vec3 lightPos = glm::vec3(-2.0f, 4.0f, -1.0f);
-	glm::vec3 lightPos = glm::vec3(2.0f,2.0f, 2.0f);
-	cameraManager.setCameraPosition(lightPos);
+	glm::vec3 lightPos = glm::vec3(2.0f,2.0f, 0.0f);
 	while (!glfwWindowShouldClose(window))
 	{
 		// 每帧开始时计算时间
@@ -134,7 +133,7 @@ int main()
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		// 1.先渲染深度贴图
 		simpleDepthShader.use();
-		GLfloat near_plane = 1.0f, far_plane = 6.5f;
+		GLfloat near_plane = 0.1f, far_plane = 6.5f;
 		glm::mat4 modelMatrix;
 		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
 		glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -145,7 +144,7 @@ int main()
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glBindVertexArray(cubeVAO);
 
-		modelMatrix = getModelMatrix(cubePosition[0], glm::vec3(1.f), 40.f);
+		modelMatrix = getModelMatrix(cubePosition[0], glm::vec3(1.f), 45.f);
 		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -153,7 +152,7 @@ int main()
 		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		modelMatrix = getModelMatrix(cubePosition[2], glm::vec3(1.f), 0.f);
+		modelMatrix = getModelMatrix(cubePosition[2], glm::vec3(1.f), 10.f);
 		simpleDepthShader.setMatrix("modelMatrix", modelMatrix);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -177,7 +176,7 @@ int main()
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);*/
 		
 
-		
+		/**/
 		// 2.绘制场景
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		shadowMapShader.use();
@@ -196,18 +195,18 @@ int main()
 		shadowMapShader.setFloat("_Material.shininess", 300.f);
 
 		shadowMapShader.setVec3("_Light.direction", glm::normalize(-lightPos));// 记得normal
-		shadowMapShader.setFloat("_Light.ambient", 0.4f);
+		shadowMapShader.setFloat("_Light.ambient", 0.5f);
 		shadowMapShader.setVec3("_Light.lightColor", glm::vec3(1.f));
 
 		shadowMapShader.setVec3("_ViewPos", cameraManager.getCameraPosition());
 		shadowMapShader.setFloat("_PixelSize", 20.f/(1024.f * 2.f));
 
 		glBindVertexArray(cubeVAO);
-		setModelTransform(shadowMapShader, cubePosition[0], glm::vec3(1.f), 40.f);
+		setModelTransform(shadowMapShader, cubePosition[0], glm::vec3(1.f), 45.f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		setModelTransform(shadowMapShader, cubePosition[1], glm::vec3(1.f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		setModelTransform(shadowMapShader, cubePosition[2], glm::vec3(1.f), 0.f);
+		setModelTransform(shadowMapShader, cubePosition[2], glm::vec3(1.f), 10.f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		glActiveTexture(GL_TEXTURE0);
@@ -224,7 +223,9 @@ int main()
 		setModelTransform(lightShader, lightPos, glm::vec3(0.1f), 0.f);
 		glBindVertexArray(cubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		
+		setModelTransform(lightShader, glm::vec3(0.f), glm::vec3(0.1f), 0.f);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
 		// swapbuffer
 		glfwSwapBuffers(window);
 	}
@@ -348,8 +349,9 @@ void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,
 {
 	// 设置矩阵
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
+	float rad = glm::radians(rotation);
 	//modelMatrix = glm::rotate(modelMatrix, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 旋转
-	modelMatrix = glm::translate(modelMatrix, location)*glm::rotate(modelMatrix, rotation, glm::vec3(1.0f, 0.3f, 0.5f)) *glm::scale(modelMatrix, scale);
+	modelMatrix = glm::translate(modelMatrix, location)*glm::rotate(modelMatrix, rad, glm::vec3(0.0f, 1.0f, 0.0f)) *glm::scale(modelMatrix, scale);
 
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
 	viewMatrix = cameraManager.getLookAtMatrix();
@@ -365,7 +367,8 @@ void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,
 glm::mat4 getModelMatrix(glm::vec3 location, glm::vec3 scale, float rotation)
 {
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
-	modelMatrix = glm::translate(modelMatrix, location) * glm::rotate(modelMatrix, rotation, glm::vec3(1.0f, 0.3f, 0.5f)) * glm::scale(modelMatrix, scale);
+	float rad = glm::radians(rotation);
+	modelMatrix = glm::translate(modelMatrix, location) * glm::rotate(modelMatrix, rad, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(modelMatrix, scale);
 	return modelMatrix;
 }
 
