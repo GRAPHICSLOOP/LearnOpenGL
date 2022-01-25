@@ -117,7 +117,7 @@ int main()
 		glBindVertexArray(quadVAO);
 		setModelTransform(normalMapShader, glm::vec3(0.f, 0.f, 0.0f), glm::vec3(2.f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		setModelTransform(normalMapShader, glm::vec3(0.f,0.f,4.f), glm::vec3(2.f), 235.f);
+		setModelTransform(normalMapShader, glm::vec3(2.f,0.f,-2.f), glm::vec3(2.f), 90.f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glDisable(GL_DEPTH_TEST);
@@ -127,7 +127,7 @@ int main()
 		normalMapShader.setInt("normalmap", 0);
 		setModelTransform(debugNormalMapShader, glm::vec3(0.f), glm::vec3(2.f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		setModelTransform(debugNormalMapShader, glm::vec3(0.f, 0.f, 4.f), glm::vec3(2.f), 235.f);
+		setModelTransform(debugNormalMapShader, glm::vec3(2.f, 0.f, -2.f), glm::vec3(2.f), 90.f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glEnable(GL_DEPTH_TEST);
 

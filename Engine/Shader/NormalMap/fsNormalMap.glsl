@@ -58,7 +58,7 @@ vec3 CalcPointLight(vec3 norm,vec3 viewDir,vec3 objectColor,vec3 specularColor)
 
 	// 漫反射
 	vec3 lightDir = normalize(_Light.position - vs_in.fragPos);
-	float diff = max(dot(norm,lightDir),0.0f);
+	float diff = max(dot(norm,lightDir),0.0f); 
 	vec3 diffuse = diff * objectColor;
 
 	// 镜面光
