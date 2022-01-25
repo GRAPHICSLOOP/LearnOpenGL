@@ -58,6 +58,22 @@ int main()
 	if (window == NULL)
 		return -1;
 
+
+	// 灯光
+	// ------------------------------------------------------------------
+	// - Positions
+	std::vector<glm::vec3> lightPositions;
+	lightPositions.push_back(glm::vec3(0.0f, 0.0f, 49.5f)); // back light
+	lightPositions.push_back(glm::vec3(-1.4f, -1.9f, 9.0f));
+	lightPositions.push_back(glm::vec3(0.0f, -1.8f, 4.0f));
+	lightPositions.push_back(glm::vec3(0.8f, -1.7f, 6.0f));
+	// - Colors
+	std::vector<glm::vec3> lightColors;
+	lightColors.push_back(glm::vec3(200.0f, 200.0f, 200.0f));
+	lightColors.push_back(glm::vec3(0.1f, 0.0f, 0.0f));
+	lightColors.push_back(glm::vec3(0.0f, 0.0f, 0.2f));
+	lightColors.push_back(glm::vec3(0.0f, 0.1f, 0.0f));
+
 	// 加载模型
 	// ------------------------------------------------------------------
 	unsigned int cubeVAO = createCube();
@@ -68,13 +84,12 @@ int main()
 
 	// 加载材质
 	// ------------------------------------------------------------------
-	ShaderManager normalMapShader("./Engine/Shader/NormalMap/vsNormalMap.glsl", "./Engine/Shader/NormalMap/fsNormalMap.glsl");
+	ShaderManager lightShader("./Engine/Shader/HDR/vsLight.glsl", "./Engine/Shader/HDR/fsLight.glsl");
 	ShaderManager debugNormalMapShader("./Engine/Shader/NormalMap/vsDebugNormalMap.glsl", "./Engine/Shader/NormalMap/fsDebugNormalMap.glsl");
-	debugNormalMapShader.linkShader("./Engine/Shader/NormalMap/geDebugNormalMap.glsl", GL_GEOMETRY_SHADER);
 
 	// 加载贴图
 	// ------------------------------------------------------------------
-	unsigned int textureCube = loadTextureFromFile("./resources/textures/brickwall.jpg", GL_REPEAT);
+	unsigned int textureCube = loadTextureFromFile("./resources/textures/wood.png", GL_REPEAT);
 	unsigned int textureCube_normal = loadTextureFromFile("./resources/textures/brickwall_normal.jpg", GL_REPEAT);
 
 
@@ -97,30 +112,26 @@ int main()
 		// 绘制
 		// ------------------------------------------------------------------
 
-		normalMapShader.use();
+		lightShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureCube);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, textureCube_normal);
+		lightShader.setInt("diffuseTexture", 0);
+
+		lightShader.setVec3("viewPos", cameraManager.getCameraPosition());
+		lightShader.setBool("inverse_normals", GL_TRUE);
+		for (GLuint i = 0; i < lightPositions.size(); i++)
+		{
+			lightShader.setVec3(("lights[" + std::to_string(i) + "].Position").c_str(), lightPositions[i]);
+			lightShader.setVec3(("lights[" + std::to_string(i) + "].Color").c_str(), lightColors[i]);
+		}
+
+		glBindVertexArray(cubeVAO);
+		setModelTransform(lightShader, glm::vec3(0.f, 0.f, 25.0f), glm::vec3(5.0f, 5.0f, 55.0f), 0.f);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
-		normalMapShader.setInt("_Material.diffuse", 0);
-		normalMapShader.setInt("_Material.normalmap", 1);
-		normalMapShader.setFloat("_Material.shininess", 64.f);
 
-		normalMapShader.setVec3("_Light.position", glm::vec3(0.f,0.f,2.f));
-		normalMapShader.setFloat("_Light.ambient", 0.2f);
-		normalMapShader.setVec3("_Light.lightColor", glm::vec3(1.f));
-
-		normalMapShader.setVec3("_ViewPos", cameraManager.getCameraPosition());
-
-		glBindVertexArray(quadVAO);
-		setModelTransform(normalMapShader, glm::vec3(0.f, 0.f, 0.0f), glm::vec3(2.f), 0.f);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		setModelTransform(normalMapShader, glm::vec3(2.f,0.f,-2.f), glm::vec3(2.f), 90.f);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		glDisable(GL_DEPTH_TEST);
+		/*glDisable(GL_DEPTH_TEST);
 		debugNormalMapShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureCube_normal);
@@ -129,7 +140,7 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		setModelTransform(debugNormalMapShader, glm::vec3(2.f, 0.f, -2.f), glm::vec3(2.f), 90.f);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);*/
 
 		// swapbuffer
 		glfwSwapBuffers(window);
@@ -418,88 +429,23 @@ unsigned int createQuad()
 {
 	unsigned int quadVAO, quadVBO;
 
-	// positions
-	glm::vec3 pos1(-1.0, 1.0, 0.0);
-	glm::vec3 pos2(-1.0, -1.0, 0.0);
-	glm::vec3 pos3(1.0, -1.0, 0.0);
-	glm::vec3 pos4(1.0, 1.0, 0.0);
-	// texture coordinates
-	glm::vec2 uv1(0.0, 1.0);
-	glm::vec2 uv2(0.0, 0.0);
-	glm::vec2 uv3(1.0, 0.0);
-	glm::vec2 uv4(1.0, 1.0);
-	// normal vector
-	glm::vec3 nm(0.0, 0.0, 1.0);
-
-	// calculate tangent/bitangent vectors of both triangles
-	glm::vec3 tangent1, bitangent1;
-	glm::vec3 tangent2, bitangent2;
-	// - triangle 1
-	glm::vec3 edge1 = pos2 - pos1;
-	glm::vec3 edge2 = pos3 - pos1;
-	glm::vec2 deltaUV1 = uv2 - uv1;
-	glm::vec2 deltaUV2 = uv3 - uv1;
-
-	GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
-	tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-	tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-	tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-	tangent1 = glm::normalize(tangent1);
-
-	bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-	bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-	bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-	bitangent1 = glm::normalize(bitangent1);
-
-	// - triangle 2
-	edge1 = pos3 - pos1;
-	edge2 = pos4 - pos1;
-	deltaUV1 = uv3 - uv1;
-	deltaUV2 = uv4 - uv1;
-
-	f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
-	tangent2.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-	tangent2.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-	tangent2.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-	tangent2 = glm::normalize(tangent2);
-
-
-	bitangent2.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-	bitangent2.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-	bitangent2.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-	bitangent2 = glm::normalize(bitangent2);
-
-
 	GLfloat quadVertices[] = {
-		// Positions            // normal         // TexCoords  // Tangent                          // Bitangent
-		pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
-		pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
-		pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
-
-		pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
-		pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
-		pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z
+		// Positions        // Texture Coords
+		-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
 	};
-
-	// setup plane VAO
+	// Setup plane VAO
 	glGenVertexArrays(1, &quadVAO);
 	glGenBuffers(1, &quadVBO);
 	glBindVertexArray(quadVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
-	glBindVertexArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
 	return quadVAO;
 }
