@@ -12,7 +12,7 @@ struct Light {
     vec3 Color;
 };
 
-uniform Light lights[16];
+uniform Light lights[4];
 uniform sampler2D diffuseTexture;
 uniform vec3 viewPos;
 

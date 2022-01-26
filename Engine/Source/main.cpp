@@ -11,6 +11,7 @@
 
 #define screenWidth 800.f
 #define screenHeight 600.f
+#define CAMERASPEED 5.5f
 
 // 摄像机系统
 CameraManager cameraManager(glm::vec3(0.0f,0.0f,5.f),glm::vec3(0.0f,-90.0f,0.0f));
@@ -85,13 +86,37 @@ int main()
 	// 加载材质
 	// ------------------------------------------------------------------
 	ShaderManager lightShader("./Engine/Shader/HDR/vsLight.glsl", "./Engine/Shader/HDR/fsLight.glsl");
-	ShaderManager debugNormalMapShader("./Engine/Shader/NormalMap/vsDebugNormalMap.glsl", "./Engine/Shader/NormalMap/fsDebugNormalMap.glsl");
+	ShaderManager hdrShader("./Engine/Shader/HDR/vsHDR.glsl", "./Engine/Shader/HDR/fsHDR.glsl");
 
 	// 加载贴图
 	// ------------------------------------------------------------------
 	unsigned int textureCube = loadTextureFromFile("./resources/textures/wood.png", GL_REPEAT);
 	unsigned int textureCube_normal = loadTextureFromFile("./resources/textures/brickwall_normal.jpg", GL_REPEAT);
 
+	// framebuffer
+	// ------------------------------------------------------------------
+	// Set up floating point framebuffer to render scene to
+	GLuint hdrFBO;
+	glGenFramebuffers(1, &hdrFBO);
+	// - Create floating point color buffer
+	GLuint colorBuffer;
+	glGenTextures(1, &colorBuffer);
+	glBindTexture(GL_TEXTURE_2D, colorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenWidth, screenHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// - Create depth buffer (renderbuffer)
+	GLuint rboDepth;
+	glGenRenderbuffers(1, &rboDepth);
+	glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, screenWidth, screenHeight);
+	// - Attach buffers
+	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Framebuffer not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -105,6 +130,8 @@ int main()
 
 		// 检查各种回调事件，鼠标键盘输入等
 		glfwPollEvents();
+
+		glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -129,18 +156,17 @@ int main()
 		setModelTransform(lightShader, glm::vec3(0.f, 0.f, 25.0f), glm::vec3(5.0f, 5.0f, 55.0f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
+		glDisable(GL_DEPTH_TEST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-
-		/*glDisable(GL_DEPTH_TEST);
-		debugNormalMapShader.use();
+		hdrShader.use();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureCube_normal);
-		normalMapShader.setInt("normalmap", 0);
-		setModelTransform(debugNormalMapShader, glm::vec3(0.f), glm::vec3(2.f), 0.f);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		setModelTransform(debugNormalMapShader, glm::vec3(2.f, 0.f, -2.f), glm::vec3(2.f), 90.f);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glEnable(GL_DEPTH_TEST);*/
+		glBindTexture(GL_TEXTURE_2D, colorBuffer);
+		hdrShader.setInt("hdrTexture", 0);
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glEnable(GL_DEPTH_TEST);
 
 		// swapbuffer
 		glfwSwapBuffers(window);
@@ -229,7 +255,7 @@ void proccessInput(GLFWwindow* window)
 	}
 
 
-	float cameraSpeed = 1.5f * deltaTime;
+	float cameraSpeed = CAMERASPEED * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		cameraManager.getCameraPositionRef() += cameraSpeed * cameraManager.getCameraFrontDir();
