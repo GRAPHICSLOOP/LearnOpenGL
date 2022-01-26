@@ -7,14 +7,14 @@ in VS_OUT {
 
 uniform sampler2D hdrTexture;
 
-float exposure = 1.1f;
+float exposure = 0.1f;
 float gamma = 2.2f;
 void main()
 {           
     vec3 color = texture(hdrTexture, fs_in.TexCoords).rgb;
 
     // Reinhard色调映射
-    // vec3 mapped = color / (color + 1.f);
+   // vec3 mapped = color / (color + 1.f);
 
     // 曝光色调映射
     vec3 mapped = vec3(1.0) - exp(-color * exposure);
@@ -22,4 +22,6 @@ void main()
     mapped  = pow(mapped,vec3(1/gamma));
 
     FragColor = vec4(mapped, 1.0);
+
+
 }

@@ -14,7 +14,7 @@
 #define CAMERASPEED 5.5f
 
 // 摄像机系统
-CameraManager cameraManager(glm::vec3(0.0f,0.0f,5.f),glm::vec3(0.0f,-90.0f,0.0f));
+CameraManager cameraManager(glm::vec3(0.0f, 0.0f, 5.f), glm::vec3(0.0f, -90.0f, 0.0f));
 
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
@@ -64,16 +64,16 @@ int main()
 	// ------------------------------------------------------------------
 	// - Positions
 	std::vector<glm::vec3> lightPositions;
-	lightPositions.push_back(glm::vec3(0.0f, 0.0f, 49.5f)); // back light
-	lightPositions.push_back(glm::vec3(-1.4f, -1.9f, 9.0f));
-	lightPositions.push_back(glm::vec3(0.0f, -1.8f, 4.0f));
-	lightPositions.push_back(glm::vec3(0.8f, -1.7f, 6.0f));
+	lightPositions.push_back(glm::vec3(1.0f, 0.0f, 4.f)); // back light
+	lightPositions.push_back(glm::vec3(0.f, 2.f, -3.0f));
+	lightPositions.push_back(glm::vec3(4.0f, -1.8f, 2.0f));
+	lightPositions.push_back(glm::vec3(-3.8f, -1.7f, 3.0f));
 	// - Colors
 	std::vector<glm::vec3> lightColors;
-	lightColors.push_back(glm::vec3(200.0f, 200.0f, 200.0f));
-	lightColors.push_back(glm::vec3(0.1f, 0.0f, 0.0f));
-	lightColors.push_back(glm::vec3(0.0f, 0.0f, 0.2f));
-	lightColors.push_back(glm::vec3(0.0f, 0.1f, 0.0f));
+	lightColors.push_back(glm::vec3(150.0f, 150.0f, 150.0f));
+	lightColors.push_back(glm::vec3(10.f, 0.0f, 0.0f));
+	lightColors.push_back(glm::vec3(0.0f, 0.0f, 10.f));
+	lightColors.push_back(glm::vec3(0.0f, 10.f, 0.0f));
 
 	// 加载模型
 	// ------------------------------------------------------------------
@@ -81,11 +81,12 @@ int main()
 	unsigned int planeVAO = createPlane();
 	unsigned int quadVAO = createQuad();
 
-	std::vector<glm::vec3> cubePosition = { glm::vec3(2.0f, 1.5f, 0.0f),glm::vec3(2.0f, 0.0f, 2.0f),glm::vec3(-1.0f, 0.0f, 2.0f)};
+	std::vector<glm::vec3> cubePosition = { glm::vec3(2.0f, 1.5f, 0.0f),glm::vec3(2.0f, 0.0f, 2.0f),glm::vec3(-1.0f, 0.0f, 2.0f) };
 
 	// 加载材质
 	// ------------------------------------------------------------------
-	ShaderManager lightShader("./Engine/Shader/HDR/vsLight.glsl", "./Engine/Shader/HDR/fsLight.glsl");
+	ShaderManager modelShader("./Engine/Shader/Bloom/vsModel.glsl", "./Engine/Shader/Bloom/fsModel.glsl");
+	ShaderManager lightShader("./Engine/Shader/Bloom/vsLight.glsl", "./Engine/Shader/Bloom/fsLight.glsl");
 	ShaderManager hdrShader("./Engine/Shader/HDR/vsHDR.glsl", "./Engine/Shader/HDR/fsHDR.glsl");
 
 	// 加载贴图
@@ -99,24 +100,31 @@ int main()
 	GLuint hdrFBO;
 	glGenFramebuffers(1, &hdrFBO);
 	// - Create floating point color buffer
-	GLuint colorBuffer;
-	glGenTextures(1, &colorBuffer);
-	glBindTexture(GL_TEXTURE_2D, colorBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenWidth, screenHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	GLuint colorBuffer[2];
+	glGenTextures(2, colorBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+	for (int i = 0; i < 2; i++)
+	{
+		glBindTexture(GL_TEXTURE_2D, colorBuffer[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenWidth, screenHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		// - Attach buffers
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffer[i], 0);
+	}
+
 	// - Create depth buffer (renderbuffer)
 	GLuint rboDepth;
 	glGenRenderbuffers(1, &rboDepth);
 	glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, screenWidth, screenHeight);
-	// - Attach buffers
-	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "Framebuffer not complete!" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -132,37 +140,50 @@ int main()
 		glfwPollEvents();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+		GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		glDrawBuffers(2, attachments);
 
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// 绘制
 		// ------------------------------------------------------------------
 
-		lightShader.use();
+		modelShader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureCube);
-		lightShader.setInt("diffuseTexture", 0);
+		modelShader.setInt("diffuseTexture", 0);
 
-		lightShader.setVec3("viewPos", cameraManager.getCameraPosition());
-		lightShader.setBool("inverse_normals", GL_TRUE);
+		modelShader.setVec3("viewPos", cameraManager.getCameraPosition());
 		for (GLuint i = 0; i < lightPositions.size(); i++)
 		{
-			lightShader.setVec3(("lights[" + std::to_string(i) + "].Position").c_str(), lightPositions[i]);
-			lightShader.setVec3(("lights[" + std::to_string(i) + "].Color").c_str(), lightColors[i]);
+			modelShader.setVec3(("lights[" + std::to_string(i) + "].Position").c_str(), lightPositions[i]);
+			modelShader.setVec3(("lights[" + std::to_string(i) + "].Color").c_str(), lightColors[i]);
 		}
 
 		glBindVertexArray(cubeVAO);
-		setModelTransform(lightShader, glm::vec3(0.f, 0.f, 25.0f), glm::vec3(5.0f, 5.0f, 55.0f), 0.f);
+		setModelTransform(modelShader, glm::vec3(0.f, 0.f, 0.0f), glm::vec3(1.f), 0.f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		lightShader.use();
+		glBindVertexArray(cubeVAO);
+		for (GLuint i = 0; i < lightPositions.size(); i++)
+		{
+			lightShader.setVec3("color", lightColors[i]);
+			setModelTransform(lightShader, lightPositions[i], glm::vec3(0.5f), 0.f);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		}
+
 
 		glDisable(GL_DEPTH_TEST);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		hdrShader.use();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, colorBuffer);
+		glBindTexture(GL_TEXTURE_2D, colorBuffer[0]);
 		hdrShader.setInt("hdrTexture", 0);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -219,7 +240,7 @@ GLFWwindow* initWindow(int width, int height)
 	return window;
 }
 
-void framebuffer_size_callback(GLFWwindow* window,int width,int height)
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	std::cout << "change window size" << std::endl;
 	glViewport(0, 0, width, height);
@@ -228,7 +249,7 @@ void framebuffer_size_callback(GLFWwindow* window,int width,int height)
 void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
 	float deltaCursorX = (float)xpos - lastCursorX;
-	float deltaCursorY = lastCursorY - (float)ypos; 
+	float deltaCursorY = lastCursorY - (float)ypos;
 	lastCursorX = (float)xpos;
 	lastCursorY = (float)ypos;
 
@@ -287,13 +308,13 @@ void proccessInput(GLFWwindow* window)
 	}
 }
 
-void setModelTransform(ShaderManager& shader,glm::vec3 location,glm::vec3 scale,float rotation)
+void setModelTransform(ShaderManager& shader, glm::vec3 location, glm::vec3 scale, float rotation)
 {
 	// 设置矩阵
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 	float rad = glm::radians(rotation);
 	//modelMatrix = glm::rotate(modelMatrix, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 旋转
-	modelMatrix = glm::translate(modelMatrix, location)*glm::rotate(modelMatrix, rad, glm::vec3(0.0f, 1.0f, 0.0f)) *glm::scale(modelMatrix, scale);
+	modelMatrix = glm::translate(modelMatrix, location) * glm::rotate(modelMatrix, rad, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(modelMatrix, scale);
 
 	glm::mat4 viewMatrix = glm::mat4(1.0f);
 	viewMatrix = cameraManager.getLookAtMatrix();
@@ -314,7 +335,7 @@ glm::mat4 getModelMatrix(glm::vec3 location, glm::vec3 scale, float rotation)
 	return modelMatrix;
 }
 
-unsigned int loadTextureFromFile(const char* texturePath,GLenum clampType)
+unsigned int loadTextureFromFile(const char* texturePath, GLenum clampType)
 {
 	// 0.翻转图片
 	//stbi_set_flip_vertically_on_load(true);
@@ -355,7 +376,7 @@ unsigned int loadTextureFromFile(const char* texturePath,GLenum clampType)
 
 unsigned int createCube()
 {
-	unsigned int cubeVAO,cubeVBO;
+	unsigned int cubeVAO, cubeVBO;
 	float vertices[] = {
 		// positions          // normals           // texture coords
 		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
