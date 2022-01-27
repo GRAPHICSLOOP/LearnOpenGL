@@ -6,12 +6,15 @@ in VS_OUT {
 } fs_in;
 
 uniform sampler2D hdrTexture;
+uniform sampler2D bloomTexture;
 
 float exposure = 0.1f;
 float gamma = 2.2f;
 void main()
 {           
     vec3 color = texture(hdrTexture, fs_in.TexCoords).rgb;
+    vec3 bloomColor = texture(bloomTexture, fs_in.TexCoords).rgb;
+    color += bloomColor;
 
     // Reinhard色调映射
    // vec3 mapped = color / (color + 1.f);
