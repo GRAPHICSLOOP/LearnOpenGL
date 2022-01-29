@@ -178,7 +178,7 @@ int main()
 	projectionMatrix = glm::perspective(glm::radians(90.f), screenWidth / screenHeight, 0.00001f, 10000.f);
 	glm::mat4 modelMatrix = glm::mat4(1.f);
 	textShader.use();
-	textShader.setMatrix("projectionMatrix", projection);
+	textShader.setMatrix("projectionMatrix", projectionMatrix);
 	textShader.setMatrix("modelMatrix", modelMatrix); 
 
 	glEnable(GL_DEPTH_TEST);
@@ -199,9 +199,9 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//textShader.use();
-		//modelMatrix = getModelMatrix(glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f / 400.f , 1.f / 400.f , 1.0f), (sin(lastFrame * 0.5) * 0.5 + 0.5) * 360.f);
-		//textShader.setMatrix("modelMatrix", modelMatrix); 
+		textShader.use();
+		modelMatrix = getModelMatrix(glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f / 400.f , 1.f / 400.f , 1.0f), (sin(lastFrame * 0.5) * 0.5 + 0.5) * 360.f);
+		textShader.setMatrix("modelMatrix", modelMatrix); 
 
 		// 绘制
 		// ------------------------------------------------------------------
