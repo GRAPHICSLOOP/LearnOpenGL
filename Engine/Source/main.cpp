@@ -2,6 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <ft2build.h>
+#include <map>
+#include FT_FREETYPE_H
+#define FT_CONFIG_OPTION_ERROR_STRINGS
 
 #include "stb_image/stb_image.h"
 #include "ShaderManager/ShaderManager.h"
@@ -9,17 +13,51 @@
 #include "Mesh/Model.h"
 #include "Mesh/CubeLight.h"
 
+
 #define screenWidth 800.f
-#define screenHeight 600.f
+#define screenHeight 800.f
 #define CAMERASPEED 5.5f
 
+
+GLenum glCheckError_(const char* file, int line)
+{
+	GLenum errorCode;
+	while ((errorCode = glGetError()) != GL_NO_ERROR)
+	{
+		std::string error;
+		switch (errorCode)
+		{
+		case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
+		case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
+		case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+		case 0x0503:                error = "STACK_OVERFLOW"; break;
+		case 0x0504:               error = "STACK_UNDERFLOW"; break;
+		case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+		}
+		std::cout << error << " | " << file << " (" << line << ")" << std::endl;
+	}
+	return errorCode;
+}
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
+
+struct Character
+{
+	GLuint textureID; // 字形纹理ID
+	glm::ivec2 size; // 字形大小
+	glm::ivec2 bearing; // 从基准线到字形左部/顶部的偏移值
+	GLuint Advance; // 原点距下一个字形原点的距离
+};
+
 // 摄像机系统
-CameraManager cameraManager(glm::vec3(0.0f, 0.0f, 5.f), glm::vec3(0.0f, -90.0f, 0.0f));
+CameraManager cameraManager(glm::vec3(0.0f, 0.0f, 1.f), glm::vec3(0.0f, -90.0f, 0.0f));
 
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
 float lastCursorX = 0.0f; // 上一帧的鼠标X轴位置
 float lastCursorY = 0.0f; // 上一帧的鼠标Y轴位置
+std::map<GLchar, Character> Characters;
+
 
 // 初始化窗口
 GLFWwindow* initWindow(int width, int height);
@@ -53,117 +91,99 @@ unsigned int createPlane();
 
 unsigned int createQuad();
 
+void renderText(ShaderManager& shader, std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color, GLuint VAO, GLuint VBO);
+
 int main()
 {
 	GLFWwindow* window = initWindow((int)screenWidth, (int)screenHeight);
 	if (window == NULL)
 		return -1;
 
+	glCheckError();
 
-	// 灯光
+	// 文字初始化
 	// ------------------------------------------------------------------
-	// - Positions
-	std::vector<glm::vec3> lightPositions;
-	lightPositions.push_back(glm::vec3(1.0f, 0.0f, 4.f)); // back light
-	lightPositions.push_back(glm::vec3(0.f, 2.f, -3.0f));
-	lightPositions.push_back(glm::vec3(4.0f, -1.8f, 2.0f));
-	lightPositions.push_back(glm::vec3(-3.8f, -1.7f, 3.0f));
-	// - Colors
-	std::vector<glm::vec3> lightColors;
-	lightColors.push_back(glm::vec3(150.0f, 150.0f, 150.0f));
-	lightColors.push_back(glm::vec3(10.f, 0.0f, 0.0f));
-	lightColors.push_back(glm::vec3(0.0f, 0.0f, 10.f));
-	lightColors.push_back(glm::vec3(0.0f, 10.f, 0.0f));
+	FT_Error error_code;
+	FT_Library ft;
+	error_code = error_code = FT_Init_FreeType(&ft);
+	if(error_code)
+		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
 
-	// 加载模型
+	FT_Face face;
+	error_code = FT_New_Face(ft, "./Engine/fonts/arial.ttf", 0, &face);
+	if (error_code)
+		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+
+	FT_Set_Pixel_Sizes(face, 0, 28);
+
+	// 生成映射表
 	// ------------------------------------------------------------------
-	unsigned int cubeVAO = createCube();
-	unsigned int planeVAO = createPlane();
-	unsigned int quadVAO = createQuad();
-
-	std::vector<glm::vec3> cubePosition = { glm::vec3(2.0f, 1.5f, 0.0f),glm::vec3(2.0f, 0.0f, 2.0f),glm::vec3(-1.0f, 0.0f, 2.0f) };
-
-	// 加载材质
-	// ------------------------------------------------------------------
-	ShaderManager modelShader("./Engine/Shader/Bloom/vsModel.glsl", "./Engine/Shader/Bloom/fsModel.glsl");
-	ShaderManager lightShader("./Engine/Shader/Bloom/vsLight.glsl", "./Engine/Shader/Bloom/fsLight.glsl");
-	ShaderManager bloomShader("./Engine/Shader/Bloom/vsBloom.glsl", "./Engine/Shader/Bloom/fsBloom.glsl");
-	ShaderManager glassShader("./Engine/Shader/Bloom/vsGlass.glsl", "./Engine/Shader/Bloom/fsGlass.glsl");
-
-	// 加载贴图
-	// ------------------------------------------------------------------
-	unsigned int textureCube = loadTextureFromFile("./resources/textures/wood.png", GL_REPEAT);
-	unsigned int textureCube_normal = loadTextureFromFile("./resources/textures/brickwall_normal.jpg", GL_REPEAT);
-
-	// framebuffer
-	// ------------------------------------------------------------------
-	// Set up floating point framebuffer to render scene to
-	GLuint hdrFBO;
-	glGenFramebuffers(1, &hdrFBO);
-	// - Create floating point color buffer
-	GLuint colorBuffers[2];
-	glGenTextures(2, colorBuffers);
-	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-	for (int i = 0; i < 2; i++)
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	for (FT_ULong c = 0; c < 128; c++)
 	{
-		glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenWidth, screenHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+		// 加载字符的字形
+		if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+		{
+			std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+			
+			continue;
+		}
+
+		// 生成纹理
+		GLuint texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
+
+		// 设置纹理选项
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		// - Attach buffers
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
+		// 储存纹理
+		Character character =
+		{
+			texture,
+			glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+			face->glyph->advance.x
+		};
+
+		Characters.insert(std::pair<GLchar, Character>(c, character));
 	}
 
-	// - Create depth buffer (renderbuffer)
-	GLuint rboDepth;
-	glGenRenderbuffers(1, &rboDepth);
-	glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, screenWidth, screenHeight);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 
-	GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, attachments);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "Framebuffer not complete!" << std::endl;
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// 高斯模糊framebuffer
+	// 材质
 	// ------------------------------------------------------------------
-	// Set up floating point framebuffer to render scene to
-	GLuint pingpongFBO[2];
-	GLuint pingpongColorbuffers[2];
-	glGenFramebuffers(2, pingpongFBO);
-	// - Create floating point color buffer
-	glGenTextures(2, pingpongColorbuffers);
-	for (int i = 0; i < 2; i++)
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
-		glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenWidth, screenHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	ShaderManager textShader("./Engine/Shader/Font/vsFont.glsl", "./Engine/Shader/Font/fsFont.glsl");
 
-		// - Attach buffers
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongColorbuffers[i], 0);
 
-		// also check if framebuffers are complete (no need for depth buffer)
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-			std::cout << "Framebuffer not complete!" << std::endl;
+	// 创建buffer
+	GLuint VAO, VBO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
 
-	
-
+	// 设置透视矩阵
+	glm::mat4 projection = glm::ortho(0.0f, screenWidth, 0.0f, screenHeight);
+	glm::mat4 projectionMatrix = glm::mat4(1.0f);
+	projectionMatrix = glm::perspective(glm::radians(90.f), screenWidth / screenHeight, 0.00001f, 10000.f);
+	glm::mat4 modelMatrix = glm::mat4(1.f);
+	textShader.use();
+	textShader.setMatrix("projectionMatrix", projection);
+	textShader.setMatrix("modelMatrix", modelMatrix); 
 
 	glEnable(GL_DEPTH_TEST);
-
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	while (!glfwWindowShouldClose(window))
 	{
 		// 每帧开始时计算时间
@@ -175,81 +195,26 @@ int main()
 		// 检查各种回调事件，鼠标键盘输入等
 		glfwPollEvents();
 
-		glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-		
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		//textShader.use();
+		//modelMatrix = getModelMatrix(glm::vec3(0.f, 0.f, -1.f), glm::vec3(1.f / 400.f , 1.f / 400.f , 1.0f), (sin(lastFrame * 0.5) * 0.5 + 0.5) * 360.f);
+		//textShader.setMatrix("modelMatrix", modelMatrix); 
+
 		// 绘制
 		// ------------------------------------------------------------------
-
-		modelShader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureCube);
-		modelShader.setInt("diffuseTexture", 0);
-
-		modelShader.setVec3("viewPos", cameraManager.getCameraPosition());
-		for (GLuint i = 0; i < lightPositions.size(); i++)
-		{
-			modelShader.setVec3(("lights[" + std::to_string(i) + "].Position").c_str(), lightPositions[i]);
-			modelShader.setVec3(("lights[" + std::to_string(i) + "].Color").c_str(), lightColors[i]);
-		}
-
-		glBindVertexArray(cubeVAO);
-		setModelTransform(modelShader, glm::vec3(0.f, 0.f, 0.0f), glm::vec3(1.f), 0.f);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		lightShader.use();
-		glBindVertexArray(cubeVAO);
-		for (GLuint i = 0; i < lightPositions.size(); i++)
-		{
-			lightShader.setVec3("color", lightColors[i]);
-			setModelTransform(lightShader, lightPositions[i], glm::vec3(0.5f), 0.f);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// 模糊绘制
-		// ------------------------------------------------------------------
-		bool horizontal = true, first_iteration = true;
-		unsigned int amount = 10;
-		glassShader.use();
-		for (unsigned int i = 0; i < amount; i++)
-		{
-			glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
-			glActiveTexture(GL_TEXTURE0);
-			glassShader.setBool("horizontal", horizontal);
-			glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
-			glassShader.setInt("hdrTexture", 0);
-			glBindVertexArray(quadVAO);
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-			horizontal = !horizontal;
-			if (first_iteration)
-				first_iteration = false;
-		}
-
-
-		glDisable(GL_DEPTH_TEST);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		bloomShader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
-		bloomShader.setInt("hdrTexture", 0);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
-		bloomShader.setInt("bloomTexture", 1);
-
-		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glEnable(GL_DEPTH_TEST);
+		renderText(textShader, "aaaaaaaaaa", 0.0f, 0.0f, 1.0f, glm::vec3(1.0, 0.0f, 0.0f),VAO,VBO);
+		//renderText(textShader, "(C) LearnOpenGL.com", 540.0f, 570.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f),VAO, VBO);
 
 		// swapbuffer
 		glfwSwapBuffers(window);
 	}
 
+	// 清理
+	FT_Done_Face(face);
+	FT_Done_FreeType(ft);
 	//glDeleteVertexArrays(1, &CubeVAO);
 	//glDeleteBuffers(1, &VBO);
 	//glDeleteBuffers(1, &EBO);
@@ -540,6 +505,8 @@ unsigned int createQuad()
 		1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
 		1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
 	};
+
+
 	// Setup plane VAO
 	glGenVertexArrays(1, &quadVAO);
 	glGenBuffers(1, &quadVBO);
@@ -552,4 +519,65 @@ unsigned int createQuad()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 
 	return quadVAO;
+}
+
+void renderText(ShaderManager& shader, std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color,GLuint VAO, GLuint VBO)
+{
+
+	// 激活对应的渲染状态
+	shader.use();
+	shader.setVec3("textColor", color);
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(VAO);
+
+	// 遍历文本中的字符
+	std::string::const_iterator c;
+	for (c = text.begin(); c != text.end(); c++)
+	{
+		Character ch = Characters[*c];
+
+		GLfloat xpos = x + ch.bearing.x * scale;
+		GLfloat ypos = y - (ch.size.y - ch.bearing.y) * scale;
+		GLfloat width = ch.size.x * scale;
+		GLfloat height = ch.size.y * scale;
+
+		// 对每个字符更新VBO
+		GLfloat vertices[6][4]
+		{
+			{xpos,ypos + height,0.f,0.f},
+			{xpos,ypos,0.f,1.f},
+			{xpos + width,ypos,1.0f,1.0f},
+
+			{xpos,ypos + height,0.f,0.f},
+			{xpos + width,ypos,1.f,1.f},
+			{xpos + width,ypos + height,1.f,0.f}
+		};
+
+		/*GLfloat vertices[6][4]
+		{
+			{0.f,10.f,0.f,0.f},
+			{0.f,0.f,0.0f,1.f},
+			{10.f,0.f,1.0f,1.0f},
+
+			{0.f,10.f,0.f,0.f},
+			{10.f,0.f,1.f,1.f},
+			{10.f,10.f,1.f,1.f}
+		};*/
+
+		// 在四边形上绘制纹理
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+		glBindTexture(GL_TEXTURE_2D, ch.textureID);
+		shader.setInt("text", 0);
+
+		// 绘制四边形
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		x += (ch.Advance >> 6) * scale;
+	}
+
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
 }
